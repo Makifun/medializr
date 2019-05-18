@@ -1,54 +1,101 @@
 version: '3'
 
 services:
-    deluge:
-        image: linuxserver/deluge
-        container_name: deluge
-        hostname: deluge
+    traefik:
+        hostname: traefik
+        image: traefik:latest
+        container_name: traefik
         restart: always
+        domainname: ${DOMAINNAME}
+        networks:
+          - default
+          - traefik_proxy
         ports:
-            - 8112:8112
-            - 58846:58846
-            - 55204:55204
-            - 55204:55204/udp
+          - "80:80"
+          - "443:443"
+          - "8080:8080"
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=traefik"
+          - "traefik.frontend.rule=Host:traefik.${DOMAINNAME}"
+          - "traefik.port=8080"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
         volumes:
-            - deluge:/config
+          - /var/run/docker.sock:/var/run/docker.sock:ro
+          - traefik:/etc/traefik
+          - scripts:/scripts
+          - /etc/localtime:/etc/localtime:ro
+        environment:
+          - CF_API_EMAIL=${CLOUDFLARE_EMAIL}
+          - CF_API_KEY=${CLOUDFLARE_API_KEY}
+
+    hydra2:
+        image: linuxserver/hydra2
+        container_name: hydra2
+        hostname: hydra2
+        restart: always
+        networks:
+          - traefik_proxy
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=hydra2"
+          - "traefik.frontend.rule=Host:hydra2.${DOMAINNAME}"
+          - "traefik.port=5076"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
+        volumes:
+            - hydra2:/config
             - nicememe:/downloads
             - scripts:/scripts
+            - /etc/localtime:/etc/localtime:ro
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
             - TZ=${TZ}
 
-    transmission:
-        image: linuxserver/transmission
-        container_name: transmission
-        hostname: transmission
+    sabnzbd:
+        image: linuxserver/sabnzbd
+        container_name: sabnzbd
+        hostname: sabnzbd
         restart: always
-        ports:
-            - 9091:9091
-            - 55206:55206
-            - 55206:55206/udp
+        networks:
+          - traefik_proxy
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=sabnzbd"
+          - "traefik.frontend.rule=Host:sabnzbd.${DOMAINNAME}"
+          - "traefik.port=8080"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
         volumes:
-            - transmission:/config
+            - sabnzbd:/config
             - nicememe:/downloads
-            - nicememe:/watch
-            - scripts:/scripts
-        environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
-
-    jackett:
-        image: linuxserver/jackett
-        container_name: jackett
-        hostname: jackett
-        restart: always
-        ports:
-            - 9117:9117
-        volumes:
-            - jackett:/config
-            - nicememe:/downloads
+            - nicememe:/incomplete-downloads
             - scripts:/scripts
             - /etc/localtime:/etc/localtime:ro
         environment:
@@ -61,13 +108,28 @@ services:
         container_name: sonarr
         hostname: sonarr
         restart: always
-        ports:
-            - 8989:8989
+        networks:
+          - traefik_proxy
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=sonarr"
+          - "traefik.frontend.rule=Host:sonarr.${DOMAINNAME}"
+          - "traefik.port=8989"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
         volumes:
             - sonarr:/config
+            - nicememe:/downloads
             - /home/turd/hehe/Serie:/tv
             - /home/turd/hehe/Anime:/anime
-            - nicememe:/downloads
             - scripts:/scripts
             - /etc/localtime:/etc/localtime:ro
         environment:
@@ -80,10 +142,26 @@ services:
         container_name: radarr
         hostname: radarr
         restart: always
-        ports:
-            - 7878:7878
+        networks:
+          - traefik_proxy
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=radarr"
+          - "traefik.frontend.rule=Host:radarr.${DOMAINNAME}"
+          - "traefik.port=7878"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
         volumes:
             - radarr:/config
+            - nicememe:/downloads
             - /home/turd/hehe/Film:/hehe/Film
             - /home/turd/hehe/Film:/movies
             - /home/turd/hehe/Asian:/hehe/Asian
@@ -99,8 +177,23 @@ services:
         container_name: bazarr
         hostname: bazarr
         restart: always
-        ports:
-            - 6767:6767
+        networks:
+          - traefik_proxy
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=bazarr"
+          - "traefik.frontend.rule=Host:bazarr.${DOMAINNAME}"
+          - "traefik.port=6767"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
         volumes:
             - bazarr:/config
             - /home/turd/hehe/Film:/movies
@@ -110,6 +203,7 @@ services:
             - /home/turd/hehe/Serie:/tv
             - /home/turd/hehe/Anime:/anime
             - scripts:/scripts
+            - /etc/localtime:/etc/localtime:ro
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -120,11 +214,27 @@ services:
         container_name: ombi
         hostname: ombi
         restart: always
-        ports:
-            - 3579:3579
+        networks:
+          - traefik_proxy
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=ombi"
+          - "traefik.frontend.rule=Host:oombi.${DOMAINNAME}"
+          - "traefik.port=3579"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
         volumes:
             - ombi:/config
             - scripts:/scripts
+            - /etc/localtime:/etc/localtime:ro
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -135,28 +245,29 @@ services:
         container_name: duplicati
         hostname: duplicati
         restart: always
-        ports:
-            - 8200:8200
+        networks:
+          - traefik_proxy
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=duplicati"
+          - "traefik.frontend.rule=Host:duplicati.${DOMAINNAME}"
+          - "traefik.port=8200"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
         volumes:
             - duplicati:/config
             - /home/turd/duplicatilocal:/backups
             - /data/config:/source:ro
             - scripts:/scripts
-        environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
-
-    influxdb:
-        image: influxdb
-        container_name: influxdb
-        hostname: influxdb
-        restart: always
-        ports:
-            - 8086:8086
-        volumes:
-            - influxdb:/var/lib/influxdb
-            - scripts:/scripts
+            - /etc/localtime:/etc/localtime:ro
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -167,26 +278,59 @@ services:
         container_name: grafana
         hostname: grafana
         restart: always
-        ports:
-            - 3000:3000
+        networks:
+          - traefik_proxy
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=grafana"
+          - "traefik.frontend.rule=Host:grafana.${DOMAINNAME}"
+          - "traefik.port=3000"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
         volumes:
             - grafana:/var/lib/grafana
             - scripts:/scripts
+            - /etc/localtime:/etc/localtime:ro
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
             - TZ=${TZ}
-        depends_on:
-            - influxdb
+            - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
 
-    varken:
-        image: boerderij/varken
-        container_name: varken
-        hostname: varken
+    chronograf:
+        image: chronograf
+        container_name: chronograf
+        hostname: chronograf
         restart: always
+        networks:
+          - traefik_proxy
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=chronograf"
+          - "traefik.frontend.rule=Host:chronograf.${DOMAINNAME}"
+          - "traefik.port=8888"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
         volumes:
-            - varken:/config
+            - chronograf:/var/lib/chronograf
             - scripts:/scripts
+            - /etc/localtime:/etc/localtime:ro
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -197,14 +341,84 @@ services:
         container_name: portainer
         hostname: portainer
         restart: always
-        ports:
-            - 9000:9000
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=portainer"
+          - "traefik.frontend.rule=Host:portainer.${DOMAINNAME}"
+          - "traefik.port=9000"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
             - portainer:/data
             - scripts:/scripts
+            - /etc/localtime:/etc/localtime:ro
         command: -H unix:///var/run/docker.sock
-        
+
+    gotify:
+        image: gotify/server
+        container_name: gotify
+        hostname: gotify
+        restart: always
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=gotify"
+          - "traefik.frontend.rule=Host:gootify.${DOMAINNAME}"
+          - "traefik.port=80"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
+        volumes:
+            - gotify:/app/data
+            - /etc/localtime:/etc/localtime:ro
+        environment:
+            - PGID=${PGID}
+            - PUID=${PUID}
+            - TZ=${TZ}
+
+    organizr:
+        image: organizrtools/organizr-v2
+        container_name: organizr
+        hostname: organizr
+        restart: always
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=organizr"
+          - "traefik.frontend.rule=Host:organizr.${DOMAINNAME}"
+          - "traefik.port=80"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
+        volumes:
+            - organizr:/config
+            - /etc/localtime:/etc/localtime:ro
+        environment:
+            - PGID=${PGID}
+            - PUID=${PUID}
+            - TZ=${TZ}
+
     ouroboros:
         image: pyouroboros/ouroboros
         container_name: ouroboros
@@ -212,20 +426,85 @@ services:
         restart: always
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
+            - /etc/localtime:/etc/localtime:ro
+        environment:
+            - CLEANUP=true
+            - SELF_UPDATE=true
+        command: -N gotify://@GOTIFY/TOKEN
+
+    influxdb:
+        image: influxdb
+        container_name: influxdb
+        hostname: pepega
+        restart: always
+        ports:
+            - 8083:8083
+            - 8086:8086
+            - 8090:8090
+        volumes:
+            - influxdb:/var/lib/influxdb
+            - scripts:/scripts
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - /etc/localtime:/etc/localtime:ro
+        environment:
+            - PGID=${PGID}
+            - PUID=${PUID}
+            - TZ=${TZ}
+
+    telegraf:
+        image: telegraf
+        container_name: telegraf
+        hostname: telegraf
+        restart: always
+        volumes:
+            - /data/config/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - /etc:/rootfs/etc:ro
+            - /proc:/rootfs/proc:ro
+            - /sys:/rootfs/sys:ro
+            - /etc/localtime:/etc/localtime:ro
+        environment:
+            - PGID=${PGID}
+            - PUID=${PUID}
+            - TZ=${TZ}
+            - HOST_ETC=/rootfs/etc
+            - HOST_PROC=/rootfs/proc
+            - HOST_SYS=/rootfs/sys
+
+    varken:
+        image: boerderij/varken
+        container_name: varken
+        hostname: varken
+        restart: always
+        volumes:
+            - varken:/config
+            - scripts:/scripts
+            - /etc/localtime:/etc/localtime:ro
+        environment:
+            - PGID=${PGID}
+            - PUID=${PUID}
+            - TZ=${TZ}
+
+networks:
+    traefik_proxy:
+        external:
+            name: traefik_proxy
+    default:
+        driver: bridge
 
 volumes:
-    deluge:
+    traefik:
         driver: local-persist
         driver_opts:
-            mountpoint: /data/config/deluge
-    transmission:
+            mountpoint: /data/config/traefik
+    hydra2:
         driver: local-persist
         driver_opts:
-            mountpoint: /data/config/transmission
-    jackett:
+            mountpoint: /data/config/hydra2
+    sabnzbd:
         driver: local-persist
         driver_opts:
-            mountpoint: /data/config/jackett
+            mountpoint: /data/config/sabnzbd
     sonarr:
         driver: local-persist
         driver_opts:
@@ -246,22 +525,34 @@ volumes:
         driver: local-persist
         driver_opts:
             mountpoint: /data/config/duplicati
-    influxdb:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/influxdb
     grafana:
         driver: local-persist
         driver_opts:
             mountpoint: /data/config/grafana
-    varken:
+    chronograf:
         driver: local-persist
         driver_opts:
-            mountpoint: /data/config/varken
+            mountpoint: /data/config/chronograf
     portainer:
         driver: local-persist
         driver_opts:
             mountpoint: /data/config/portainer
+    gotify:
+        driver: local-persist
+        driver_opts:
+            mountpoint: /data/config/gotify
+    organizr:
+        driver: local-persist
+        driver_opts:
+            mountpoint: /data/config/organizr
+    influxdb:
+        driver: local-persist
+        driver_opts:
+            mountpoint: /data/config/influxdb
+    varken:
+        driver: local-persist
+        driver_opts:
+            mountpoint: /data/config/varken
     nicememe:
         driver: local-persist
         driver_opts:
@@ -270,3 +561,4 @@ volumes:
         driver: local-persist
         driver_opts:
             mountpoint: /home/turd/scripts
+
