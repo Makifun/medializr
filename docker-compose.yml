@@ -175,7 +175,6 @@ services:
             - radarr:/config
             - nicememe:/downloads
             - movies:/hehe/Film
-            - movies:/movies
             - asian:/hehe/Asian
         environment:
             - PGID=${PGID}
@@ -211,11 +210,9 @@ services:
             - /etc/localtime:/etc/localtime:ro
             - bazarr:/config
             - movies:/hehe/Film
-            - movies:/movies
             - asian:/hehe/Asian
-            - tv:/tv
             - anime:/hehe/Anime
-            - anime:/anime
+            - tv:/tv
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
