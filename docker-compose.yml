@@ -2,9 +2,9 @@ version: '3'
 
 services:
     traefik:
-        hostname: traefik
         image: traefik:latest
         container_name: traefik
+        hostname: traefik
         restart: always
         domainname: ${DOMAINNAME}
         networks:
@@ -29,11 +29,13 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock:ro
-          - traefik:/etc/traefik
-          - scripts:/scripts
+          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - traefik:/etc/traefik
         environment:
           - CF_API_EMAIL=${CLOUDFLARE_EMAIL}
           - CF_API_KEY=${CLOUDFLARE_API_KEY}
@@ -60,11 +62,13 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
         volumes:
+            - scripts:/scripts:ro
+            - /etc/localtime:/etc/localtime:ro
             - hydra2:/config
             - nicememe:/downloads
-            - scripts:/scripts
-            - /etc/localtime:/etc/localtime:ro
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -92,12 +96,14 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
         volumes:
+            - scripts:/scripts:ro
+            - /etc/localtime:/etc/localtime:ro
             - sabnzbd:/config
             - nicememe:/downloads
             - nicememe:/incomplete-downloads
-            - scripts:/scripts
-            - /etc/localtime:/etc/localtime:ro
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -125,13 +131,15 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
         volumes:
+            - scripts:/scripts:ro
+            - /etc/localtime:/etc/localtime:ro
             - sonarr:/config
             - nicememe:/downloads
-            - /home/turd/hehe/Serie:/tv
-            - /home/turd/hehe/Anime:/anime
-            - scripts:/scripts
-            - /etc/localtime:/etc/localtime:ro
+            - tv:/tv
+            - anime:/anime
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -159,14 +167,16 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
         volumes:
+            - scripts:/scripts:ro
+            - /etc/localtime:/etc/localtime:ro
             - radarr:/config
             - nicememe:/downloads
-            - /home/turd/hehe/Film:/hehe/Film
-            - /home/turd/hehe/Film:/movies
-            - /home/turd/hehe/Asian:/hehe/Asian
-            - scripts:/scripts
-            - /etc/localtime:/etc/localtime:ro
+            - movies:/hehe/Film
+            - movies:/movies
+            - asian:/hehe/Asian
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -194,16 +204,18 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
         volumes:
-            - bazarr:/config
-            - /home/turd/hehe/Film:/movies
-            - /home/turd/hehe/Asian:/hehe/Asian
-            - /home/turd/hehe/Film:/hehe/Film
-            - /home/turd/hehe/Anime:/hehe/Anime
-            - /home/turd/hehe/Serie:/tv
-            - /home/turd/hehe/Anime:/anime
-            - scripts:/scripts
+            - scripts:/scripts:ro
             - /etc/localtime:/etc/localtime:ro
+            - bazarr:/config
+            - movies:/hehe/Film
+            - movies:/movies
+            - asian:/hehe/Asian
+            - tv:/tv
+            - anime:/hehe/Anime
+            - anime:/anime
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -231,10 +243,12 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
         volumes:
-            - ombi:/config
-            - scripts:/scripts
+            - scripts:/scripts:ro
             - /etc/localtime:/etc/localtime:ro
+            - ombi:/config
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -262,12 +276,14 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
         volumes:
-            - duplicati:/config
-            - /home/turd/duplicatilocal:/backups
-            - /data/config:/source:ro
-            - scripts:/scripts
+            - scripts:/scripts:ro
             - /etc/localtime:/etc/localtime:ro
+            - duplicati:/config
+            - duplicatilocal:/backups
+            - /data/config:/source:ro
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -295,10 +311,12 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
         volumes:
-            - grafana:/var/lib/grafana
-            - scripts:/scripts
+            - scripts:/scripts:ro
             - /etc/localtime:/etc/localtime:ro
+            - grafana:/var/lib/grafana
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -327,10 +345,12 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
         volumes:
-            - chronograf:/var/lib/chronograf
-            - scripts:/scripts
+            - scripts:/scripts:ro
             - /etc/localtime:/etc/localtime:ro
+            - chronograf:/var/lib/chronograf
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -356,11 +376,13 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
-            - portainer:/data
-            - scripts:/scripts
+            - scripts:/scripts:ro
             - /etc/localtime:/etc/localtime:ro
+            - portainer:/data
         command: -H unix:///var/run/docker.sock
 
     gotify:
@@ -383,9 +405,12 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
         volumes:
-            - gotify:/app/data
+            - scripts:/scripts:ro
             - /etc/localtime:/etc/localtime:ro
+            - gotify:/app/data
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -411,9 +436,12 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
         volumes:
-            - organizr:/config
+            - scripts:/scripts:ro
             - /etc/localtime:/etc/localtime:ro
+            - organizr:/config
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -426,11 +454,12 @@ services:
         restart: always
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
+            - scripts:/scripts:ro
             - /etc/localtime:/etc/localtime:ro
         environment:
             - CLEANUP=true
             - SELF_UPDATE=true
-        command: -N gotify://@GOTIFY/TOKEN
+        command: -N ${OUROBOROSNOTIFICATION}
 
     influxdb:
         image: influxdb
@@ -442,10 +471,10 @@ services:
             - 8086:8086
             - 8090:8090
         volumes:
-            - influxdb:/var/lib/influxdb
-            - scripts:/scripts
             - /var/run/docker.sock:/var/run/docker.sock:ro
+            - scripts:/scripts:ro
             - /etc/localtime:/etc/localtime:ro
+            - influxdb:/var/lib/influxdb
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -457,12 +486,13 @@ services:
         hostname: telegraf
         restart: always
         volumes:
-            - /data/config/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
             - /var/run/docker.sock:/var/run/docker.sock:ro
+            - scripts:/scripts:ro
+            - /etc/localtime:/etc/localtime:ro
+            - /data/config/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
             - /etc:/rootfs/etc:ro
             - /proc:/rootfs/proc:ro
             - /sys:/rootfs/sys:ro
-            - /etc/localtime:/etc/localtime:ro
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -477,9 +507,9 @@ services:
         hostname: varken
         restart: always
         volumes:
-            - varken:/config
-            - scripts:/scripts
+            - scripts:/scripts:ro
             - /etc/localtime:/etc/localtime:ro
+            - varken:/config
         environment:
             - PGID=${PGID}
             - PUID=${PUID}
@@ -561,4 +591,23 @@ volumes:
         driver: local-persist
         driver_opts:
             mountpoint: /home/turd/scripts
-
+    tv:
+        driver: local-persist
+        driver_opts:
+            mountpoint: /home/turd/hehe/Serie
+    anime:
+        driver: local-persist
+        driver_opts:
+            mountpoint: /home/turd/hehe/Anime
+    movies:
+        driver: local-persist
+        driver_opts:
+            mountpoint: /home/turd/hehe/Film
+    asian:
+        driver: local-persist
+        driver_opts:
+            mountpoint: /home/turd/hehe/Asian
+    duplicatilocal:
+        driver: local-persist
+        driver_opts:
+            mountpoint: /home/turd/duplicatilocal
