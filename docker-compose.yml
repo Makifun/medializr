@@ -251,6 +251,39 @@ services:
             - PUID=${PUID}
             - TZ=${TZ}
 
+    tautulli:
+        image: linuxserver/tautulli
+        container_name: tautulli
+        hostname: tautulli
+        restart: always
+        networks:
+          - traefik_proxy
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=tautulli"
+          - "traefik.frontend.rule=Host:tautulli.${DOMAINNAME}"
+          - "traefik.port=8181"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
+        volumes:
+            - scripts:/scripts:ro
+            - /etc/localtime:/etc/localtime:ro
+            - tautulli:/config
+        environment:
+            - PGID=${PGID}
+            - PUID=${PUID}
+            - TZ=${TZ}
+
     duplicati:
         image: linuxserver/duplicati
         container_name: duplicati
@@ -548,6 +581,10 @@ volumes:
         driver: local-persist
         driver_opts:
             mountpoint: /data/config/ombi
+    tautulli:
+        driver: local-persist
+        driver_opts:
+            mountpoint: /data/config/tautulli
     duplicati:
         driver: local-persist
         driver_opts:
