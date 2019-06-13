@@ -36,6 +36,7 @@ services:
           - /etc/localtime:/etc/localtime:ro
           - scripts:/scripts:ro
           - traefik:/etc/traefik
+          - traefiktmp:/tmp
         environment:
           - CF_API_EMAIL=${CLOUDFLARE_EMAIL}
           - CF_API_KEY=${CLOUDFLARE_API_KEY}
@@ -274,8 +275,8 @@ services:
           - scripts:/scripts:ro
           - radarr:/config
           - nicememe:/downloads
-          - movies:/hehe/Film
-          - asian:/hehe/Asian
+          - movies:/movies
+          - asian:/asian
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -313,6 +314,7 @@ services:
           - asian:/hehe/Asian
           - anime:/hehe/Anime
           - tv:/tv
+          - movies:/movies
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -379,6 +381,7 @@ services:
           - /etc/localtime:/etc/localtime:ro
           - scripts:/scripts:ro
           - tautulli:/config
+          - tautulli:/logs
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -657,6 +660,10 @@ volumes:
         driver: local-persist
         driver_opts:
             mountpoint: /data/config/traefik
+    traefiktmp:
+        driver: local-persist
+        driver_opts:
+            mountpoint: /data/config/traefiktmp
     vpn:
         driver: local-persist
         driver_opts:
