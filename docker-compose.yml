@@ -40,13 +40,112 @@ services:
           - CF_API_EMAIL=${CLOUDFLARE_EMAIL}
           - CF_API_KEY=${CLOUDFLARE_API_KEY}
 
+    vpn:
+        image: dperson/openvpn-client
+        container_name: vpn
+        hostname: vpn
+        restart: always
+        extra_hosts:
+          - "deluge.${DOMAINNAME}:${DOCKERHOSTIP}"
+          - "jackett.${DOMAINNAME}:${DOCKERHOSTIP}"
+          - "hydra2.${DOMAINNAME}:${DOCKERHOSTIP}"
+          - "sabnzbd.${DOMAINNAME}:${DOCKERHOSTIP}"
+          - "sonarr.${DOMAINNAME}:${DOCKERHOSTIP}"
+          - "radarr.${DOMAINNAME}:${DOCKERHOSTIP}"
+          - "bazarr.${DOMAINNAME}:${DOCKERHOSTIP}"
+        cap_add:
+          - NET_ADMIN
+        networks:
+          - default
+        volumes:
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - vpn:/vpn
+          - /dev/net:/dev/net:z
+        environment:
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
+        working_dir: "/vpn"
+        dns:
+          - ${VPNDNS}
+        command: -f ""
+
+    deluge:
+        image: linuxserver/deluge:latest
+        container_name: deluge
+        restart: always
+        depends_on:
+          - vpn
+        network_mode: "service:vpn"
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=deluge"
+          - "traefik.frontend.rule=Host:deluge.${DOMAINNAME}"
+          - "traefik.port=8112"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
+        volumes:
+          - deluge:/config
+          - nicememe:/downloads
+          - scripts:/scripts
+          - /etc/localtime:/etc/localtime:ro
+        environment:
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
+
+    jackett:
+        image: linuxserver/jackett
+        container_name: jackett
+        restart: always
+        depends_on:
+          - vpn
+        network_mode: "service:vpn"
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=jackett"
+          - "traefik.frontend.rule=Host:jackett.${DOMAINNAME}"
+          - "traefik.port=9117"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
+        volumes:
+          - jackett:/config
+          - nicememe:/downloads
+          - scripts:/scripts
+          - /etc/localtime:/etc/localtime:ro
+        environment:
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
+
     hydra2:
         image: linuxserver/hydra2
         container_name: hydra2
-        hostname: hydra2
         restart: always
-        networks:
-          - traefik_proxy
+        depends_on:
+          - vpn
+        network_mode: "service:vpn"
         labels:
           - "traefik.enable=true"
           - "traefik.backend=hydra2"
@@ -65,14 +164,14 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
-            - hydra2:/config
-            - nicememe:/downloads
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - hydra2:/config
+          - nicememe:/downloads
         environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
 
     sabnzbd:
         image: linuxserver/sabnzbd
@@ -99,23 +198,23 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
-            - sabnzbd:/config
-            - nicememe:/downloads
-            - nicememe:/incomplete-downloads
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - sabnzbd:/config
+          - nicememe:/downloads
+          - nicememe:/incomplete-downloads
         environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
 
     sonarr:
         image: linuxserver/sonarr:preview
         container_name: sonarr
-        hostname: sonarr
         restart: always
-        networks:
-          - traefik_proxy
+        depends_on:
+          - vpn
+        network_mode: "service:vpn"
         labels:
           - "traefik.enable=true"
           - "traefik.backend=sonarr"
@@ -134,24 +233,24 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
-            - sonarr:/config
-            - nicememe:/downloads
-            - tv:/tv
-            - anime:/anime
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - sonarr:/config
+          - nicememe:/downloads
+          - tv:/tv
+          - anime:/anime
         environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
 
     radarr:
         image: linuxserver/radarr
         container_name: radarr
-        hostname: radarr
         restart: always
-        networks:
-          - traefik_proxy
+        depends_on:
+          - vpn
+        network_mode: "service:vpn"
         labels:
           - "traefik.enable=true"
           - "traefik.backend=radarr"
@@ -170,24 +269,23 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
-            - radarr:/config
-            - nicememe:/downloads
-            - movies:/hehe/Film
-            - asian:/hehe/Asian
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - radarr:/config
+          - nicememe:/downloads
+          - movies:/hehe/Film
         environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
 
     bazarr:
         image: linuxserver/bazarr
         container_name: bazarr
-        hostname: bazarr
         restart: always
-        networks:
-          - traefik_proxy
+        depends_on:
+          - vpn
+        network_mode: "service:vpn"
         labels:
           - "traefik.enable=true"
           - "traefik.backend=bazarr"
@@ -206,17 +304,16 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
-            - bazarr:/config
-            - movies:/hehe/Film
-            - asian:/hehe/Asian
-            - anime:/hehe/Anime
-            - tv:/tv
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - bazarr:/config
+          - movies:/hehe/Film
+          - anime:/hehe/Anime
+          - tv:/tv
         environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
 
     ombi:
         image: linuxserver/ombi
@@ -243,13 +340,13 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
-            - ombi:/config
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - ombi:/config
         environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
 
     tautulli:
         image: linuxserver/tautulli
@@ -276,13 +373,13 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
-            - tautulli:/config
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - tautulli:/config
         environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
 
     duplicati:
         image: linuxserver/duplicati
@@ -309,15 +406,15 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
-            - duplicati:/config
-            - duplicatilocal:/backups
-            - /data/config:/source:ro
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - duplicati:/config
+          - duplicatilocal:/backups
+          - /data/config:/source:ro
         environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
 
     grafana:
         image: grafana/grafana
@@ -344,14 +441,14 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
-            - grafana:/var/lib/grafana
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - grafana:/var/lib/grafana
         environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
-            - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
+          - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
 
     chronograf:
         image: chronograf
@@ -378,13 +475,13 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
-            - chronograf:/var/lib/chronograf
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - chronograf:/var/lib/chronograf
         environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
 
     portainer:
         image: portainer/portainer
@@ -409,10 +506,10 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-            - /var/run/docker.sock:/var/run/docker.sock
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
-            - portainer:/data
+          - /var/run/docker.sock:/var/run/docker.sock
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - portainer:/data
         command: -H unix:///var/run/docker.sock
 
     gotify:
@@ -438,13 +535,13 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
-            - gotify:/app/data
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - gotify:/app/data
         environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
 
     organizr:
         image: organizrtools/organizr-v2
@@ -469,13 +566,13 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
-            - organizr:/config
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - organizr:/config
         environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
 
     ouroboros:
         image: pyouroboros/ouroboros
@@ -483,12 +580,12 @@ services:
         hostname: ouroboros
         restart: always
         volumes:
-            - /var/run/docker.sock:/var/run/docker.sock
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
+          - /var/run/docker.sock:/var/run/docker.sock
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
         environment:
-            - CLEANUP=true
-            - SELF_UPDATE=true
+          - CLEANUP=true
+          - SELF_UPDATE=true
         command: -N ${OUROBOROSNOTIFICATION}
 
     influxdb:
@@ -497,18 +594,18 @@ services:
         hostname: pepega
         restart: always
         ports:
-            - 8083:8083
-            - 8086:8086
-            - 8090:8090
+          - 8083:8083
+          - 8086:8086
+          - 8090:8090
         volumes:
-            - /var/run/docker.sock:/var/run/docker.sock:ro
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
-            - influxdb:/var/lib/influxdb
+          - /var/run/docker.sock:/var/run/docker.sock:ro
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - influxdb:/var/lib/influxdb
         environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
 
     telegraf:
         image: telegraf
@@ -516,20 +613,20 @@ services:
         hostname: telegraf
         restart: always
         volumes:
-            - /var/run/docker.sock:/var/run/docker.sock:ro
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
-            - /data/config/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
-            - /etc:/rootfs/etc:ro
-            - /proc:/rootfs/proc:ro
-            - /sys:/rootfs/sys:ro
+          - /var/run/docker.sock:/var/run/docker.sock:ro
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - /data/config/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+          - /etc:/rootfs/etc:ro
+          - /proc:/rootfs/proc:ro
+          - /sys:/rootfs/sys:ro
         environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
-            - HOST_ETC=/rootfs/etc
-            - HOST_PROC=/rootfs/proc
-            - HOST_SYS=/rootfs/sys
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
+          - HOST_ETC=/rootfs/etc
+          - HOST_PROC=/rootfs/proc
+          - HOST_SYS=/rootfs/sys
 
     varken:
         image: boerderij/varken
@@ -537,13 +634,13 @@ services:
         hostname: varken
         restart: always
         volumes:
-            - scripts:/scripts:ro
-            - /etc/localtime:/etc/localtime:ro
-            - varken:/config
+          - scripts:/scripts:ro
+          - /etc/localtime:/etc/localtime:ro
+          - varken:/config
         environment:
-            - PGID=${PGID}
-            - PUID=${PUID}
-            - TZ=${TZ}
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
 
 networks:
     traefik_proxy:
@@ -557,6 +654,18 @@ volumes:
         driver: local-persist
         driver_opts:
             mountpoint: /data/config/traefik
+    vpn:
+        driver: local-persist
+        driver_opts:
+            mountpoint: /data/config/vpn
+    deluge:
+        driver: local-persist
+        driver_opts:
+            mountpoint: /data/config/deluge
+    jackett:
+        driver: local-persist
+        driver_opts:
+            mountpoint: /data/config/jackett
     hydra2:
         driver: local-persist
         driver_opts:
@@ -620,28 +729,24 @@ volumes:
     nicememe:
         driver: local-persist
         driver_opts:
-            mountpoint: /home/turd/nicememe
+            mountpoint: ${NICEMEME}
     scripts:
         driver: local-persist
         driver_opts:
-            mountpoint: /home/turd/scripts
+            mountpoint: ${SCRIPTS}
     tv:
         driver: local-persist
         driver_opts:
-            mountpoint: /home/turd/hehe/Serie
+            mountpoint: ${TV}
     anime:
         driver: local-persist
         driver_opts:
-            mountpoint: /home/turd/hehe/Anime
+            mountpoint: ${ANIME}
     movies:
         driver: local-persist
         driver_opts:
-            mountpoint: /home/turd/hehe/Film
-    asian:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /home/turd/hehe/Asian
+            mountpoint: ${MOVIES}
     duplicatilocal:
         driver: local-persist
         driver_opts:
-            mountpoint: /home/turd/duplicatilocal
+            mountpoint: ${DUPLICATI}
