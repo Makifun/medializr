@@ -1,19 +1,19 @@
-version: '3'
+version: '3.7'
 
 services:
     traefik:
-        image: traefik:latest
+        image: traefik
         container_name: traefik
-        hostname: traefik
         restart: always
+        hostname: traefik
         domainname: ${DOMAINNAME}
         networks:
           - default
           - traefik_proxy
         ports:
-          - "80:80"
-          - "443:443"
-          - "8080:8080"
+          - 80:80
+          - 443:443
+          - 8080:8080
         labels:
           - "traefik.enable=true"
           - "traefik.backend=traefik"
@@ -33,8 +33,8 @@ services:
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock:ro
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - traefik:/etc/traefik
         environment:
           - CF_API_EMAIL=${CLOUDFLARE_EMAIL}
@@ -43,10 +43,10 @@ services:
     vpn:
         image: dperson/openvpn-client
         container_name: vpn
-        hostname: vpn
         restart: always
+        hostname: vpn
         extra_hosts:
-          - "deluge.${DOMAINNAME}:${DOCKERHOSTIP}"
+          - "qbittorrent.${DOMAINNAME}:${DOCKERHOSTIP}"
           - "jackett.${DOMAINNAME}:${DOCKERHOSTIP}"
           - "hydra2.${DOMAINNAME}:${DOCKERHOSTIP}"
           - "sabnzbd.${DOMAINNAME}:${DOCKERHOSTIP}"
@@ -58,8 +58,8 @@ services:
         networks:
           - default
         volumes:
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - vpn:/vpn
           - /dev/net:/dev/net:z
         environment:
@@ -71,18 +71,18 @@ services:
           - ${VPNDNS}
         command: -f ""
 
-    deluge:
-        image: linuxserver/deluge:latest
-        container_name: deluge
+    qbittorrent:
+        image: linuxserver/qbittorrent
+        container_name: qbittorrent
         restart: always
         depends_on:
           - vpn
         network_mode: "service:vpn"
         labels:
           - "traefik.enable=true"
-          - "traefik.backend=deluge"
-          - "traefik.frontend.rule=Host:deluge.${DOMAINNAME}"
-          - "traefik.port=8112"
+          - "traefik.backend=qbittorrent"
+          - "traefik.frontend.rule=Host:qbittorrent.${DOMAINNAME}"
+          - "traefik.port=8091"
           - "traefik.docker.network=traefik_proxy"
           - "traefik.frontend.headers.SSLRedirect=true"
           - "traefik.frontend.headers.STSSeconds=315360000"
@@ -96,14 +96,15 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-          - deluge:/config
-          - nicememe:/downloads
-          - scripts:/scripts
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
+          - qbittorrent:/config
+          - nicememe:/downloads
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
+          - WEBUI_PORT=8091
 
     jackett:
         image: linuxserver/jackett
@@ -130,10 +131,10 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - jackett:/config
           - nicememe:/downloads
-          - scripts:/scripts
-          - /etc/localtime:/etc/localtime:ro
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -164,8 +165,8 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - hydra2:/config
           - nicememe:/downloads
         environment:
@@ -176,8 +177,8 @@ services:
     sabnzbd:
         image: linuxserver/sabnzbd
         container_name: sabnzbd
-        hostname: sabnzbd
         restart: always
+        hostname: sabnzbd
         networks:
           - traefik_proxy
         labels:
@@ -198,8 +199,8 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - sabnzbd:/config
           - nicememe:/downloads
           - nicememe:/incomplete-downloads
@@ -233,8 +234,8 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - sonarr:/config
           - nicememe:/downloads
           - tv:/tv
@@ -269,11 +270,12 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - radarr:/config
           - nicememe:/downloads
           - movies:/hehe/Film
+          - asian:/hehe/Asian
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -304,10 +306,11 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - bazarr:/config
           - movies:/hehe/Film
+          - asian:/hehe/Asian
           - anime:/hehe/Anime
           - tv:/tv
         environment:
@@ -318,8 +321,8 @@ services:
     ombi:
         image: linuxserver/ombi
         container_name: ombi
-        hostname: ombi
         restart: always
+        hostname: ombi
         networks:
           - traefik_proxy
         labels:
@@ -340,8 +343,8 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - ombi:/config
         environment:
           - PGID=${PGID}
@@ -351,8 +354,8 @@ services:
     tautulli:
         image: linuxserver/tautulli
         container_name: tautulli
-        hostname: tautulli
         restart: always
+        hostname: tautulli
         networks:
           - traefik_proxy
         labels:
@@ -373,8 +376,8 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - tautulli:/config
         environment:
           - PGID=${PGID}
@@ -384,8 +387,8 @@ services:
     duplicati:
         image: linuxserver/duplicati
         container_name: duplicati
-        hostname: duplicati
         restart: always
+        hostname: duplicati
         networks:
           - traefik_proxy
         labels:
@@ -406,8 +409,8 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - duplicati:/config
           - duplicatilocal:/backups
           - /data/config:/source:ro
@@ -419,8 +422,8 @@ services:
     grafana:
         image: grafana/grafana
         container_name: grafana
-        hostname: grafana
         restart: always
+        hostname: grafana
         networks:
           - traefik_proxy
         labels:
@@ -441,8 +444,8 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - grafana:/var/lib/grafana
         environment:
           - PGID=${PGID}
@@ -453,8 +456,8 @@ services:
     chronograf:
         image: chronograf
         container_name: chronograf
-        hostname: chronograf
         restart: always
+        hostname: chronograf
         networks:
           - traefik_proxy
         labels:
@@ -475,8 +478,8 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - chronograf:/var/lib/chronograf
         environment:
           - PGID=${PGID}
@@ -486,8 +489,8 @@ services:
     portainer:
         image: portainer/portainer
         container_name: portainer
-        hostname: portainer
         restart: always
+        hostname: portainer
         labels:
           - "traefik.enable=true"
           - "traefik.backend=portainer"
@@ -507,16 +510,16 @@ services:
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - portainer:/data
         command: -H unix:///var/run/docker.sock
 
     gotify:
         image: gotify/server
         container_name: gotify
-        hostname: gotify
         restart: always
+        hostname: gotify
         labels:
           - "traefik.enable=true"
           - "traefik.backend=gotify"
@@ -535,8 +538,8 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - gotify:/app/data
         environment:
           - PGID=${PGID}
@@ -546,8 +549,8 @@ services:
     organizr:
         image: organizrtools/organizr-v2
         container_name: organizr
-        hostname: organizr
         restart: always
+        hostname: organizr
         labels:
           - "traefik.enable=true"
           - "traefik.backend=organizr"
@@ -566,8 +569,8 @@ services:
           - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - organizr:/config
         environment:
           - PGID=${PGID}
@@ -577,12 +580,12 @@ services:
     ouroboros:
         image: pyouroboros/ouroboros
         container_name: ouroboros
-        hostname: ouroboros
         restart: always
+        hostname: ouroboros
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
         environment:
           - CLEANUP=true
           - SELF_UPDATE=true
@@ -591,16 +594,16 @@ services:
     influxdb:
         image: influxdb
         container_name: influxdb
-        hostname: pepega
         restart: always
+        hostname: pepega
         ports:
           - 8083:8083
           - 8086:8086
           - 8090:8090
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock:ro
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - influxdb:/var/lib/influxdb
         environment:
           - PGID=${PGID}
@@ -610,12 +613,12 @@ services:
     telegraf:
         image: telegraf
         container_name: telegraf
-        hostname: telegraf
         restart: always
+        hostname: telegraf
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock:ro
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - /data/config/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
           - /etc:/rootfs/etc:ro
           - /proc:/rootfs/proc:ro
@@ -631,11 +634,11 @@ services:
     varken:
         image: boerderij/varken
         container_name: varken
-        hostname: varken
         restart: always
+        hostname: varken
         volumes:
-          - scripts:/scripts:ro
           - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
           - varken:/config
         environment:
           - PGID=${PGID}
@@ -658,10 +661,10 @@ volumes:
         driver: local-persist
         driver_opts:
             mountpoint: /data/config/vpn
-    deluge:
+    qbittorrent:
         driver: local-persist
         driver_opts:
-            mountpoint: /data/config/deluge
+            mountpoint: /data/config/qbittorrent
     jackett:
         driver: local-persist
         driver_opts:
@@ -746,6 +749,10 @@ volumes:
         driver: local-persist
         driver_opts:
             mountpoint: ${MOVIES}
+    asian:
+        driver: local-persist
+        driver_opts:
+            mountpoint: ${ASIAN}
     duplicatilocal:
         driver: local-persist
         driver_opts:
