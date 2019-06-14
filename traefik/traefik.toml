@@ -26,13 +26,9 @@ defaultEntryPoints = ["https", "http"]
         "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
       ]
 
-[file]
-  watch = true
-  filename = "/etc/traefik/rules.toml"
-
 # Let's encrypt configuration
 [acme]
-email = "" #any email id will work
+email = "email@adress.com" #any email id will work
 storage="/etc/traefik/acme/acme.json"
 entryPoint = "https"
 acmeLogging=true
