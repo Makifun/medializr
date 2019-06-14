@@ -276,7 +276,6 @@ services:
           - radarr:/config
           - nicememe:/downloads
           - movies:/movies
-          - asian:/asian
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -311,7 +310,6 @@ services:
           - scripts:/scripts:ro
           - bazarr:/config
           - movies:/hehe/Film
-          - asian:/hehe/Asian
           - anime:/hehe/Anime
           - tv:/tv
           - movies:/movies
@@ -756,10 +754,6 @@ volumes:
         driver: local-persist
         driver_opts:
             mountpoint: ${MOVIES}
-    asian:
-        driver: local-persist
-        driver_opts:
-            mountpoint: ${ASIAN}
     duplicatilocal:
         driver: local-persist
         driver_opts:
