@@ -1,11 +1,11 @@
 # medializr
-##### On a fresh Ubuntu 18.04 Server(without selecting any additional software in the installation guide except for maybe OpenSSH) you can run the following commands in the following order and it should work just fine
+#### On a fresh Ubuntu 18.04 Server(without selecting any additional software in the installation guide except for maybe OpenSSH) you can run the following commands in the following order and it should work just fine
 
-First make sure everything is up to date and reboot once to get on the newer kernel
+###### First make sure everything is up to date and reboot once to get on the newer kernel
 ```
 sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-upgrade && sudo apt install linux-generic-hwe-18.04 && sudo reboot
 ```
-##### **sudo apt install linux-generic-hwe-18.04** will install kernel **4.18** right now(2019-06-15) and this is needed if you want to be able to use SMB version **3.1.1** for Windows network shares(recommended)
+**sudo apt install linux-generic-hwe-18.04** will install kernel **4.18** right now(2019-06-15) and this is needed if you want to be able to use SMB version **3.1.1** for Windows network shares(recommended)
 * Reference: https://wiki.samba.org/index.php/LinuxCIFSKernel
 
 ## Install docker
