@@ -49,11 +49,11 @@ You should reboot once you are here or you might get **Bad Gateway** through tra
 sudo reboot
 ```
 ## Install cifs-utils
-If you are going to mount Windows Shares you need cifs-utils
+If you are going to mount **Windows Shares** you need cifs-utils
 ```
 sudo apt-get install cifs-utils
 ```
-Now if you are going to use Windows Shares and you wish to mount them in your server you should first create your credentials file and store it safely in /root
+Now if you are going to use **Windows Shares** and you wish to mount them in your server you should first create your credentials file and store it safely in /root
 ```
 sudo nano /root/.smbcredentials
 sudo chmod 600 /root/.smbcredentials
@@ -74,7 +74,7 @@ Example cifs mounts:
 //192.168.1.50/tv /mnt/tv cifs credentials=/root/.smbcredentials,iocharset=utf8,vers=3.1.1,uid=1000,gid=1000 0 0
 //192.168.1.50/anime /mnt/anime cifs credentials=/root/.smbcredentials,iocharset=utf8,vers=3.1.1,uid=1000,gid=1000 0 0
 ```
-## Some files you need to edit with your own values/paths
+## Some files need to be manually edited with your own values/paths
 These files need some manual edits, the rest are configurable through their **Web UIs** etc
 
 Edit almost everything in this file:
@@ -102,7 +102,7 @@ https://gootify.domain.tld <- this should be accessible from the internet
 https://grafana.domain.tld
 https://hydra2.domain.tld
 https://jackett.domain.tld
-https://omobi.domain.tld <- this should be accessible from the internet
+https://oombi.domain.tld <- this should be accessible from the internet
 https://organizr.domain.tld
 https://portainer.domain.tld
 https://qbittorrent.domain.tld
