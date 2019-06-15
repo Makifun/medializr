@@ -95,7 +95,7 @@ Enter your InfluxDB/Tautulli/Sonarr/Radarr/Ombi details here(example file availa
 
 * /data/config/varken/varken.ini
 ## Links to everything
-You need to create DNS-records for each of these and/or edit your hosts-file, if everything went OK you should be able to access the below URLs now
+You need to create DNS-records for each of these and/or [edit your hosts-file](https://www.howtogeek.com/howto/27350/beginner-geek-how-to-edit-your-hosts-file/), if everything went OK you should be able to access the below URLs now
 ```
 https://bazarr.domain.tld
 https://chronograf.domain.tld
