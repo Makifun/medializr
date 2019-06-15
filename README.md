@@ -5,7 +5,7 @@ First make sure everything is up to date and reboot once to get on the newer ker
 ```
 sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-upgrade && sudo apt install linux-generic-hwe-18.04 && sudo reboot
 ```
-**sudo apt install linux-generic-hwe-18.04** will install kernel **4.18** right now(2019-06-15) and this is needed if you want to be able to use SMB version **3.1.1** for Windows network shares(recommended)
+**sudo apt install linux-generic-hwe-18.04** will install kernel **4.18** right now(2019-06-15) and this is needed if you want to be able to use SMB version **3.1.1** for Windows network shares(**recommended**)
 * **Reference**: https://wiki.samba.org/index.php/LinuxCIFSKernel
 
 ## Install docker
@@ -35,16 +35,16 @@ sudo touch /data/config/traefik/acme/acme.json
 sudo chmod 600 /data/config/traefik/acme/acme.json
 ```
 ## Edit .firewall in /data/config/vpn
-Add your LAN IP-range(CIDR), such as 192.168.1.0/24 or 10.0.0.0/24 or whatever, just add it on one line, you need this to be able to access anything outside the VPN network(such as sabnzbd)
+Add your LAN IP-range(CIDR), such as **192.168.1.0/24** or **10.0.0.0/24** or whatever, just add it on one line, you need this to be able to access anything outside the VPN network(***such as sabnzbd***)
 ```
 sudo mkdir -p /data/config/vpn
 sudo nano /data/config/vpn/.firewall
 ```
-Type 192.168.1.0/24(or whatever range you are using) and save it by pressing Ctrl+X and then enter
+Type **192.168.1.0/24**(or whatever range you are using) and save it by pressing **Ctrl+X** and then enter
 
-Also put your openvpn configuration file(s) from your VPN provider in /data/config/vpn(.conf/.ovpn/.key/.crt/etc) while you are at it
+Also put your openvpn configuration file(s) from your VPN provider in **/data/config/vpn(.conf/.ovpn/.key/.crt/etc)** while you are at it
 ## Reboot time
-You should reboot once you are here or you might get Bad Gateway through traefik
+You should reboot once you are here or you might get **Bad Gateway** through traefik
 ```
 sudo reboot
 ```
@@ -64,7 +64,7 @@ username=yourusername
 password=yourpassword
 ```
 ## Mount your Windows Shares
-Edit your /etc/fstab and add line(s) at the bottom of the file for your network shares
+Edit your **/etc/fstab** and add line(s) at the bottom of the file for your network shares
 ```
 sudo nano /etc/fstab
 ```
@@ -75,21 +75,21 @@ Example cifs mounts:
 //192.168.1.50/anime /mnt/anime cifs credentials=/root/.smbcredentials,iocharset=utf8,vers=3.1.1,uid=1000,gid=1000 0 0
 ```
 ## Some files you need to edit with your own values/paths
-These files need some manual edits, the rest are configurable through their Web UIs etc
+These files need some manual edits, the rest are configurable through their **Web UIs** etc
 
 Edit almost everything in this file
 
 * .env
 
-Replace domain.tld(in 3 places) with your own domain here and also add your email address here
+Replace **domain.tld**(in 3 places) with your own domain here and also add your **email address** here
 
 * /data/config/traefik/traefik.toml
 
-Edit host_whitelist to sabnzbd.domain.tld(replace with your own domain) in this file
+Edit **host_whitelist** to **sabnzbd.domain.tld**(replace with your own domain) in this file
 
 * /data/config/sabnzbd/sabnzbd.ini
 
-Enter your InfluxDB/Tautulli/Sonarr/Radarr/Ombi details here(example file available)
+Enter your **InfluxDB/Tautulli/Sonarr/Radarr/Ombi** details here(example file available)
 
 * /data/config/varken/varken.ini
 ## Links to everything
@@ -112,7 +112,7 @@ https://sonarr.domain.tld
 https://tautulli.domain.tld
 https://traefik.domain.tld
 ```
-They are named gootify and oombi to try to obfuscate it a bit
+They are named **gootify** and **oombi** to try to obfuscate it a bit
 ## Example hosts entry:
 ```
 192.168.1.50 sonarr.domain.tld
