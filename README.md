@@ -6,7 +6,7 @@ First make sure everything is up to date and reboot once to get on the newer ker
 sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-upgrade && sudo apt install linux-generic-hwe-18.04 && sudo reboot
 ```
 **sudo apt install linux-generic-hwe-18.04** will install kernel **4.18** right now(2019-06-15) and this is needed if you want to be able to use SMB version **3.1.1** for Windows network shares(recommended)
-* Reference: https://wiki.samba.org/index.php/LinuxCIFSKernel
+* **Reference**: https://wiki.samba.org/index.php/LinuxCIFSKernel
 
 ## Install docker
 ```
