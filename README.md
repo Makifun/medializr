@@ -44,21 +44,21 @@ Type 192.168.1.0/24(or whatever range you are using) and save it by pressing Ctr
 
 Also put your openvpn configuration file(s) from your VPN provider in /data/config/vpn(.conf/.ovpn/.key/.crt/etc) while you are at it
 ## Reboot time
-#### You should reboot once you are here or you might get Bad Gateway through traefik
+You should reboot once you are here or you might get Bad Gateway through traefik
 ```
 sudo reboot
 ```
 ## Install cifs-utils
-#### If you are going to mount Windows Shares you need cifs-utils
+If you are going to mount Windows Shares you need cifs-utils
 ```
 sudo apt-get install cifs-utils
 ```
-#### Now if you are going to use Windows Shares and you wish to mount them in your server you should first create your credentials file and store it safely in /root
+Now if you are going to use Windows Shares and you wish to mount them in your server you should first create your credentials file and store it safely in /root
 ```
 sudo nano /root/.smbcredentials
 sudo chmod 600 /root/.smbcredentials
 ```
-#### Make sure it looks like this
+Make sure it looks like this
 ```
 username=yourusername
 password=yourpassword
@@ -68,7 +68,7 @@ Edit your /etc/fstab and add line(s) at the bottom of the file for your network 
 ```
 sudo nano /etc/fstab
 ```
-#### Example cifs mounts:
+Example cifs mounts:
 ```
 //192.168.1.50/movies /mnt/movies cifs credentials=/root/.smbcredentials,iocharset=utf8,vers=3.1.1,uid=1000,gid=1000 0 0
 //192.168.1.50/tv /mnt/tv cifs credentials=/root/.smbcredentials,iocharset=utf8,vers=3.1.1,uid=1000,gid=1000 0 0
