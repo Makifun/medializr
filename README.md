@@ -42,7 +42,7 @@ sudo nano /data/config/vpn/.firewall
 ```
 Type **192.168.1.0/24**(or whatever range you are using) and save it by pressing **Ctrl+X** and then enter
 
-Also put your openvpn configuration file(s) from your VPN provider in **/data/config/vpn(.conf/.ovpn/.key/.crt/etc)** while you are at it
+Also put your openvpn configuration file(s) from your VPN provider in **/data/config/vpn** while you are at it **(.conf/.ovpn/.key/.crt/etc)**
 ## Reboot time
 You should reboot once you are here or you might get **Bad Gateway** through traefik
 ```
