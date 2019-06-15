@@ -16,18 +16,18 @@ sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubun
 sudo apt-get install docker-ce docker-ce-cli containerd.io
 ```
 ## Install docker-compose and make it executable
-Check https://github.com/docker/compose/releases for any newer version first
+#### Check https://github.com/docker/compose/releases for any newer version first
 ```
 sudo curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 ```
 ## Install the [local-persist driver](https://github.com/MatchbookLab/local-persist)
-For the persistant volumes
+#### For the persistant volumes
 ```
 curl -fsSL https://raw.githubusercontent.com/CWSpear/local-persist/master/scripts/install.sh | sudo bash
 ```
 ## Traefik network
-Create the docker network for traefik and then create the acme folder, making sure acme.json exists in it and then set the correct permissions
+#### Create the docker network for traefik and then create the acme folder, making sure acme.json exists in it and then set the correct permissions
 ```
 sudo docker network create traefik_proxy
 sudo mkdir -p /data/config/traefik/acme
@@ -35,30 +35,30 @@ sudo touch /data/config/traefik/acme/acme.json
 sudo chmod 600 /data/config/traefik/acme/acme.json
 ```
 ## Edit .firewall in /data/config/vpn
-Add your LAN IP-range(CIDR), such as 192.168.1.0/24 or 10.0.0.0/24 or whatever, just add it on one line, you need this to be able to access anything outside the VPN network(such as sabnzbd)
+#### Add your LAN IP-range(CIDR), such as 192.168.1.0/24 or 10.0.0.0/24 or whatever, just add it on one line, you need this to be able to access anything outside the VPN network(such as sabnzbd)
 ```
 sudo mkdir -p /data/config/vpn
 sudo nano /data/config/vpn/.firewall
 ```
-Type 192.168.1.0/24(or whatever range you are using) and save it by pressing Ctrl+X and then enter
+#### Type 192.168.1.0/24(or whatever range you are using) and save it by pressing Ctrl+X and then enter
 
-Also put your openvpn configuration file(s) from your VPN provider in /data/config/vpn(.conf/.ovpn/.key/.crt/etc) while you are at it
+#### Also put your openvpn configuration file(s) from your VPN provider in /data/config/vpn(.conf/.ovpn/.key/.crt/etc) while you are at it
 ## Reboot time
 You should reboot once you are here or you might get Bad Gateway through traefik
 ```
 sudo reboot
 ```
 ## Install cifs-utils
-If you are going to mount Windows Shares you need cifs-utils
+#### If you are going to mount Windows Shares you need cifs-utils
 ```
 sudo apt-get install cifs-utils
 ```
-Now if you are going to use Windows Shares and you wish to mount them in your server you should first create your credentials file and store it safely in /root
+#### Now if you are going to use Windows Shares and you wish to mount them in your server you should first create your credentials file and store it safely in /root
 ```
 sudo nano /root/.smbcredentials
 sudo chmod 600 /root/.smbcredentials
 ```
-Make sure it looks like this:
+#### Make sure it looks like this
 ```
 username=yourusername
 password=yourpassword
