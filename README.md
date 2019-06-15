@@ -77,23 +77,23 @@ Example cifs mounts:
 ## Some files you need to edit with your own values/paths
 These files need some manual edits, the rest are configurable through their **Web UIs** etc
 
-Edit almost everything in this file
+Edit almost everything in this file:
 
 * .env
 
-Replace **domain.tld**(in 3 places) with your own domain here and also add your **email address** here
+Replace **domain.tld**(in 3 places) with your own domain here and also add your **email address** here:
 
 * /data/config/traefik/traefik.toml
 
-Edit **host_whitelist** to **sabnzbd.domain.tld**(replace with your own domain) in this file
+Edit **host_whitelist** to **sabnzbd.domain.tld**(replace with your own domain) in this file:
 
 * /data/config/sabnzbd/sabnzbd.ini
 
-Enter your **InfluxDB/Tautulli/Sonarr/Radarr/Ombi** details here(example file available)
+Enter your **InfluxDB/Tautulli/Sonarr/Radarr/Ombi** details here(example file available):
 
 * /data/config/varken/varken.ini
 ## Links to everything
-You need to create DNS-records for each of these and/or [edit your hosts-file](https://www.howtogeek.com/howto/27350/beginner-geek-how-to-edit-your-hosts-file/), if everything went OK you should be able to access the below URLs now
+You need to create DNS-records for each of these and/or [edit your hosts-file](https://www.howtogeek.com/howto/27350/beginner-geek-how-to-edit-your-hosts-file/). If everything went OK you should be able to access the below URLs now.
 ```
 https://bazarr.domain.tld
 https://chronograf.domain.tld
