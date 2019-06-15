@@ -27,7 +27,7 @@ For the persistant volumes
 curl -fsSL https://raw.githubusercontent.com/CWSpear/local-persist/master/scripts/install.sh | sudo bash
 ```
 ## Traefik network
-Create the docker network for traefik and then create the acme folder, making sure acme.json exists in it and then set the correct permissions
+Create the docker network for traefik and then create the acme folder, making sure **acme.json** exists in it and then set the correct permissions
 ```
 sudo docker network create traefik_proxy
 sudo mkdir -p /data/config/traefik/acme
