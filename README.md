@@ -83,7 +83,7 @@ Edit almost everything in this file
 
 * .env
 
-Replace domain.tld(in 3 places) with your own domain here
+Replace domain.tld(in 3 places) with your own domain here and also add your email address here
 
 * /data/config/traefik/traefik.toml
 
