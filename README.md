@@ -1,11 +1,11 @@
 # :ocean: medializr
 On a fresh **Ubuntu 18.04 Server**(without selecting any additional software in the installation guide except for **OpenSSH**) you can run the following commands in the following order and it should work just fine
 
-First make sure everything is up to date and reboot once to get on the newer kernel(**not sure if needed anymore**)
+First make sure everything is up to date and reboot once to get on the newest kernel
 ```
 sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-upgrade && sudo apt install linux-generic-hwe-18.04 && sudo reboot
 ```
-**sudo apt install linux-generic-hwe-18.04** will install kernel **5.3.0-40** right now(2020-03-20) and this is needed if you want to be able to use SMB version **3.1.1** for Windows network shares(**recommended**)
+**sudo apt install linux-generic-hwe-18.04** will install kernel **5.3.0-40** right now(2020-03-20) and this is needed if you want to be able to use SMB version **3.1.1** for Windows network shares(**not sure if needed anymore though**)
 * **Reference**: https://wiki.samba.org/index.php/LinuxCIFSKernel
 
 ## Install docker
