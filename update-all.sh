@@ -5,4 +5,5 @@ docker-compose pull
 echo "[$0] ***** Recreating containers if required... *****"
 docker-compose up -d
 echo "[$0] ***** Done. *****"
+docker image prune -f
 exit 0
