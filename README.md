@@ -1,11 +1,11 @@
 # :ocean: medializr
 On a fresh **Ubuntu 18.04 Server**(without selecting any additional software in the installation guide except for **OpenSSH**) you can run the following commands in the following order and it should work just fine
 
-First make sure everything is up to date and reboot once to get on the newer kernel
+First make sure everything is up to date and reboot once to get on the newer kernel**(not sure if needed anymore)**
 ```
 sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-upgrade && sudo apt install linux-generic-hwe-18.04 && sudo reboot
 ```
-**sudo apt install linux-generic-hwe-18.04** will install kernel **4.18** right now(2019-06-15) and this is needed if you want to be able to use SMB version **3.1.1** for Windows network shares(**recommended**)
+**sudo apt install linux-generic-hwe-18.04** will install kernel **5.3.0-40** right now(2020-03-20) and this is needed if you want to be able to use SMB version **3.1.1** for Windows network shares(**recommended**)
 * **Reference**: https://wiki.samba.org/index.php/LinuxCIFSKernel
 
 ## Install docker
@@ -35,7 +35,7 @@ sudo touch /data/config/traefik/acme/acme.json
 sudo chmod 600 /data/config/traefik/acme/acme.json
 ```
 ## Edit .firewall in /data/config/vpn
-Add your LAN IP-range(CIDR), such as **192.168.1.0/24** or **10.0.0.0/24** or whatever, just add it on one line, you need this to be able to access anything outside the VPN network(***such as sabnzbd***)
+Add your LAN IP-range(CIDR), such as **192.168.1.0/24** or **10.0.0.0/24** or whatever, just add it on one line, you need this to be able to access anything outside the VPN network(***such as qbittorrent***)
 ```
 sudo mkdir -p /data/config/vpn
 sudo nano /data/config/vpn/.firewall
@@ -89,17 +89,12 @@ Edit **host_whitelist** to **sabnzbd.domain.tld**(replace with your own domain) 
 
 * /data/config/sabnzbd/sabnzbd.ini
 
-Enter your **InfluxDB/Tautulli/Sonarr/Radarr/Ombi** details here(example file available):
-
-* /data/config/varken/varken.ini
 ## Links to everything
 You need to create DNS-records for each of these and/or [edit your hosts-file](https://www.howtogeek.com/howto/27350/beginner-geek-how-to-edit-your-hosts-file/). If everything went OK you should be able to access the below URLs now.
 ```
 https://bazarr.domain.tld
-https://chronograf.domain.tld
 https://duplicati.domain.tld
 https://gootify.domain.tld <- this should be accessible from the internet
-https://grafana.domain.tld
 https://hydra2.domain.tld
 https://jackett.domain.tld
 https://oombi.domain.tld <- this should be accessible from the internet
@@ -117,18 +112,11 @@ They are named **gootify** and **oombi** to try to obfuscate it a bit
 ```
 192.168.1.50 sonarr.domain.tld
 ```
-## Some lit guides for InfluxDB/Grafana/Telegraf/Varken
-* https://towardsdatascience.com/get-system-metrics-for-5-min-with-docker-telegraf-influxdb-and-grafana-97cfd957f0ac
-* https://angristan.xyz/monitoring-telegraf-influxdb-grafana/
-* https://alexsguardian.net/2019/02/21/monitoring-your-media-server-with-varken/
 ## Software used
 * [Bazarr](https://github.com/morpheus65535/bazarr)
-* [Chronograf](https://github.com/influxdata/chronograf)
 * [Duplicati](https://github.com/duplicati/duplicati)
 * [Gotify](https://github.com/gotify/server)
-* [Grafana](https://github.com/grafana/grafana)
 * [NZBHydra 2](https://github.com/theotherp/nzbhydra2)
-* [InfluxDB](https://github.com/influxdata/influxdb)
 * [Jackett](https://github.com/Jackett/Jackett)
 * [Ombi](https://github.com/tidusjar/Ombi)
 * [Organizr](https://github.com/causefx/Organizr)
@@ -140,6 +128,4 @@ They are named **gootify** and **oombi** to try to obfuscate it a bit
 * [SABnzbd](https://github.com/sabnzbd/sabnzbd)
 * [Sonarr](https://github.com/Sonarr/Sonarr)
 * [Tautulli](https://github.com/Tautulli/Tautulli)
-* [Telegraf](https://github.com/influxdata/telegraf)
 * [Traefik](https://github.com/containous/traefik)
-* [Varken](https://github.com/Boerderij/Varken)
