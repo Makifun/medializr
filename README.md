@@ -1,7 +1,7 @@
 # :ocean: medializr
 On a fresh **Ubuntu 18.04 Server**(without selecting any additional software in the installation guide except for **OpenSSH**) you can run the following commands in the following order and it should work just fine
 
-First make sure everything is up to date and reboot once to get on the newer kernel**(not sure if needed anymore)**
+First make sure everything is up to date and reboot once to get on the newer kernel(**not sure if needed anymore**)
 ```
 sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-upgrade && sudo apt install linux-generic-hwe-18.04 && sudo reboot
 ```
