@@ -5,7 +5,7 @@ First make sure everything is up to date and reboot once to get on the newest ke
 ```
 sudo apt-get update && sudo apt-get upgrade && sudo apt-get dist-upgrade && sudo apt install linux-generic-hwe-18.04 && sudo reboot
 ```
-**sudo apt install linux-generic-hwe-18.04** will install kernel **5.3.0-40** right now(2020-03-20) and this is needed if you want to be able to use SMB version **3.1.1** for Windows network shares(**not sure if needed anymore though**)
+**sudo apt install linux-generic-hwe-18.04** will install kernel **5.4.0-42** right now(2020-08-14) and this is needed if you want to be able to use SMB version **3.1.1** for Windows network shares(**not sure if needed anymore though**)
 * **Reference**: https://wiki.samba.org/index.php/LinuxCIFSKernel
 
 ## Install docker
@@ -18,7 +18,7 @@ sudo apt-get install docker-ce docker-ce-cli containerd.io
 ## Install docker-compose and make it executable
 Check https://github.com/docker/compose/releases for any newer version first
 ```
-sudo curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/download/1.26.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 ```
 ## Install the [local-persist driver](https://github.com/MatchbookLab/local-persist)
@@ -89,6 +89,15 @@ Edit **host_whitelist** to **sabnzbd.domain.tld**(replace with your own domain) 
 
 * /data/config/sabnzbd/sabnzbd.ini
 
+Create the file **/data/config/synclounge/servers.json** and put the following in it(replace with your own stuff of course):
+```
+ {
+  "name": "epic memes",
+  "location": "Earth xd",
+  "url": "https://lounge.domain.tld/slserver",
+  "image": "https://i.imgur.com/PSlPcfZ.png"
+ }
+```
 ## Links to everything
 You need to create DNS-records for each of these and/or [edit your hosts-file](https://www.howtogeek.com/howto/27350/beginner-geek-how-to-edit-your-hosts-file/). If everything went OK you should be able to access the below URLs now.
 ```
@@ -106,6 +115,7 @@ https://sabnzbd.domain.tld
 https://sonarr.domain.tld
 https://tautulli.domain.tld
 https://traefik.domain.tld
+https://lounge.domain.tld <- this should be accessible from the internet
 ```
 They are named **gootify** and **oombi** to try to obfuscate it a bit
 ## Example hosts entry:
@@ -129,3 +139,4 @@ They are named **gootify** and **oombi** to try to obfuscate it a bit
 * [Sonarr](https://github.com/Sonarr/Sonarr)
 * [Tautulli](https://github.com/Tautulli/Tautulli)
 * [Traefik](https://github.com/containous/traefik)
+* [Synclounge](https://github.com/samcm/synclounge)
