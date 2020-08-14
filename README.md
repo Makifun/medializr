@@ -1,4 +1,4 @@
-# :ocean: medializr
+# ![kkonaPog](https://i.imgur.com/PSlPcfZ.png) medializr
 On a fresh **Ubuntu 18.04 Server**(without selecting any additional software in the installation guide except for **OpenSSH**) you can run the following commands in the following order and it should work just fine
 
 First make sure everything is up to date and reboot once to get on the newest kernel
