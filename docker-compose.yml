@@ -1,8 +1,8 @@
-version: '3.7'
+version: '3.8'
 
 services:
     traefik:
-        image: traefik:v1.7.22-alpine
+        image: traefik:v1.7.26-alpine
         container_name: traefik
         restart: always
         hostname: traefik
@@ -144,7 +144,7 @@ services:
           - TZ=${TZ}
 
     hydra2:
-        image: linuxserver/hydra2
+        image: linuxserver/nzbhydra2
         container_name: hydra2
         restart: always
         depends_on:
@@ -313,6 +313,7 @@ services:
           - radarr:/config
           - nicememe:/downloads
           - movies:/movies
+          - asian:/asian
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -583,19 +584,41 @@ services:
           - PUID=${PUID}
           - TZ=${TZ}
 
-    # ouroboros:
-        # image: pyouroboros/ouroboros
-        # container_name: ouroboros
-        # restart: always
-        # hostname: ouroboros
-        # volumes:
-          # - /var/run/docker.sock:/var/run/docker.sock
-          # - /etc/localtime:/etc/localtime:ro
-          # - scripts:/scripts:ro
-        # environment:
-          # - CLEANUP=true
-          # - SELF_UPDATE=true
-        # command: -N ${OUROBOROSNOTIFICATION}
+    synclounge:
+        image: linuxserver/synclounge
+        container_name: synclounge
+        restart: always
+        hostname: synclounge
+        labels:
+          - "traefik.enable=true"
+          - "traefik.webui.frontend.rule=Host:lounge.${DOMAINNAME}"
+          - "traefik.slserver.frontend.rule=Host:lounge.${DOMAINNAME}; PathPrefix:/slserver"
+          - "traefik.webui.backend=synclounge"
+          - "traefik.slserver.backend=slserver"
+          - "traefik.webui.port=8088"
+          - "traefik.slserver.port=8089"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - scripts:/scripts:ro
+          - /data/config/synclounge/servers.json:/defaults/servers.json
+        environment:
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
+          - AUTOJOIN_ENABLED=false
+          - AUTH_LIST=$(SYNCLOUNGEAUTH)
 
 networks:
     traefik_proxy:
@@ -677,6 +700,10 @@ volumes:
         driver: local-persist
         driver_opts:
             mountpoint: /data/config/organizr
+    synclounge:
+        driver: local-persist
+        driver_opts:
+            mountpoint: /data/config/synclounge
     nicememe:
         driver: local-persist
         driver_opts:
@@ -705,6 +732,10 @@ volumes:
         driver: local-persist
         driver_opts:
             mountpoint: ${MOVIES4K}
+    asian:
+        driver: local-persist
+        driver_opts:
+            mountpoint: ${ASIAN}
     duplicatilocal:
         driver: local-persist
         driver_opts:
