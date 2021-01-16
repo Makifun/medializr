@@ -1,8 +1,38 @@
-version: '3.8'
+version: '3.9'
 
 services:
+    cloudcmd:
+        image: coderaiser/cloudcmd
+        container_name: cloudcmd
+        restart: always
+        labels:
+          - "traefik.enable=true"
+          - "traefik.backend=cloudcmd"
+          - "traefik.frontend.rule=Host:cloudcmd.${DOMAINNAME}"
+          - "traefik.port=8000"
+          - "traefik.docker.network=traefik_proxy"
+          - "traefik.frontend.headers.SSLRedirect=true"
+          - "traefik.frontend.headers.STSSeconds=315360000"
+          - "traefik.frontend.headers.browserXSSFilter=true"
+          - "traefik.frontend.headers.contentTypeNosniff=true"
+          - "traefik.frontend.headers.forceSTSHeader=true"
+          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
+          - "traefik.frontend.headers.STSIncludeSubdomains=true"
+          - "traefik.frontend.headers.STSPreload=true"
+          - "traefik.frontend.headers.frameDeny=true"
+          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
+          - "traefik.frontend.passHostHeader=true"
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - ${POOLERINO}:/poolerino
+          - ${NICEMEME}:/downloads
+        environment:
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
+
     traefik:
-        image: traefik:v1.7.26-alpine
+        image: traefik:v1.7.28-alpine
         container_name: traefik
         restart: always
         hostname: traefik
@@ -34,9 +64,8 @@ services:
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock:ro
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - traefik:/etc/traefik
-          - traefiktmp:/tmp
+          - ${CONTAINERDATA}/traefik:/etc/traefik
+          - ${CONTAINERDATA}/traefiktmp:/tmp
         environment:
           - CF_API_EMAIL=${CLOUDFLARE_EMAIL}
           - CF_API_KEY=${CLOUDFLARE_API_KEY}
@@ -62,8 +91,7 @@ services:
           - default
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - vpn:/vpn
+          - ${CONTAINERDATA}/vpn:/vpn
           - /dev/net:/dev/net:z
         environment:
           - PGID=${PGID}
@@ -100,9 +128,8 @@ services:
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - qbittorrent:/config
-          - nicememe:/downloads
+          - ${CONTAINERDATA}/qbittorrent:/config
+          - ${NICEMEME}:/downloads
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -135,9 +162,8 @@ services:
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - jackett:/config
-          - nicememe:/downloads
+          - ${CONTAINERDATA}/jackett:/config
+          - ${NICEMEME}:/downloads
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -169,9 +195,8 @@ services:
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - hydra2:/config
-          - nicememe:/downloads
+          - ${CONTAINERDATA}/hydra2:/config
+          - ${NICEMEME}:/downloads
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -203,10 +228,9 @@ services:
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - sabnzbd:/config
-          - nicememe:/downloads
-          - nicememe:/incomplete-downloads
+          - ${CONTAINERDATA}/sabnzbd:/config
+          - ${NICEMEME}:/downloads
+          - ${NICEMEME}:/incomplete-downloads
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -238,11 +262,10 @@ services:
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - sonarr:/config
-          - nicememe:/downloads
-          - tv:/tv
-          - anime:/anime
+          - ${CONTAINERDATA}/sonarr:/config
+          - ${NICEMEME}:/downloads
+          - ${TV}:/tv
+          - ${ANIME}:/anime
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -274,10 +297,9 @@ services:
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - sonarr4k:/config
-          - nicememe:/downloads
-          - tv4k:/tv4k
+          - ${CONTAINERDATA}/sonarr4k:/config
+          - ${NICEMEME}:/downloads
+          - ${TV4K}:/tv4k
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -309,11 +331,10 @@ services:
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - radarr:/config
-          - nicememe:/downloads
-          - movies:/movies
-          - asian:/asian
+          - ${CONTAINERDATA}/radarr:/config
+          - ${NICEMEME}:/downloads
+          - ${MOVIES}:/movies
+          - ${ASIAN}:/asian
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -345,10 +366,9 @@ services:
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - radarr4k:/config
-          - nicememe:/downloads
-          - movies4k:/movies4k
+          - ${CONTAINERDATA}/radarr4k:/config
+          - ${NICEMEME}:/downloads
+          - ${MOVIES4K}:/movies4k
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -380,12 +400,11 @@ services:
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - bazarr:/config
-          - movies:/hehe/Film
-          - anime:/hehe/Anime
-          - tv:/tv
-          - movies:/movies
+          - ${CONTAINERDATA}/bazarr:/config
+          - ${MOVIES}:/hehe/Film
+          - ${ANIME}:/hehe/Anime
+          - ${TV}:/tv
+          - ${MOVIES}:/movies
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -417,8 +436,7 @@ services:
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - ombi:/config
+          - ${CONTAINERDATA}/ombi:/config
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -450,9 +468,8 @@ services:
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - tautulli:/config
-          - tautulli:/logs
+          - ${CONTAINERDATA}/tautulli:/config
+          - ${CONTAINERDATA}/tautulli:/logs
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -484,10 +501,9 @@ services:
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - duplicati:/config
-          - duplicatilocal:/backups
-          - /data/config:/source:ro
+          - ${CONTAINERDATA}/duplicati:/config
+          - ${DUPLICATI}:/backups
+          - ${CONTAINERDATA}:/source:ro
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -518,8 +534,7 @@ services:
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - portainer:/data
+          - ${CONTAINERDATA}/portainer:/data
         command: -H unix:///var/run/docker.sock
 
     gotify:
@@ -546,15 +561,14 @@ services:
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - gotify:/app/data
+          - ${CONTAINERDATA}/gotify:/app/data
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
 
     organizr:
-        image: organizrtools/organizr-v2
+        image: organizr/organizr
         container_name: organizr
         restart: always
         hostname: organizr
@@ -577,48 +591,11 @@ services:
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - organizr:/config
+          - ${CONTAINERDATA}/organizr:/config
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
-
-    synclounge:
-        image: linuxserver/synclounge
-        container_name: synclounge
-        restart: always
-        hostname: synclounge
-        labels:
-          - "traefik.enable=true"
-          - "traefik.webui.frontend.rule=Host:lounge.${DOMAINNAME}"
-          - "traefik.slserver.frontend.rule=Host:lounge.${DOMAINNAME}; PathPrefix:/slserver"
-          - "traefik.webui.backend=synclounge"
-          - "traefik.slserver.backend=slserver"
-          - "traefik.webui.port=8088"
-          - "traefik.slserver.port=8089"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
-          - "traefik.frontend.passHostHeader=true"
-        volumes:
-          - /etc/localtime:/etc/localtime:ro
-          - scripts:/scripts:ro
-          - /data/config/synclounge/servers.json:/defaults/servers.json
-        environment:
-          - PGID=${PGID}
-          - PUID=${PUID}
-          - TZ=${TZ}
-          - AUTOJOIN_ENABLED=false
-          - AUTH_LIST=$(SYNCLOUNGEAUTH)
 
 networks:
     traefik_proxy:
@@ -626,117 +603,3 @@ networks:
             name: traefik_proxy
     default:
         driver: bridge
-
-volumes:
-    traefik:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/traefik
-    traefiktmp:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/traefiktmp
-    vpn:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/vpn
-    qbittorrent:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/qbittorrent
-    jackett:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/jackett
-    hydra2:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/hydra2
-    sabnzbd:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/sabnzbd
-    sonarr:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/sonarr
-    sonarr4k:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/sonarr4k
-    radarr:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/radarr
-    radarr4k:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/radarr4k
-    bazarr:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/bazarr
-    ombi:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/ombi
-    tautulli:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/tautulli
-    duplicati:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/duplicati
-    portainer:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/portainer
-    gotify:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/gotify
-    organizr:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/organizr
-    synclounge:
-        driver: local-persist
-        driver_opts:
-            mountpoint: /data/config/synclounge
-    nicememe:
-        driver: local-persist
-        driver_opts:
-            mountpoint: ${NICEMEME}
-    scripts:
-        driver: local-persist
-        driver_opts:
-            mountpoint: ${SCRIPTS}
-    tv:
-        driver: local-persist
-        driver_opts:
-            mountpoint: ${TV}
-    tv4k:
-        driver: local-persist
-        driver_opts:
-            mountpoint: ${TV4K}
-    anime:
-        driver: local-persist
-        driver_opts:
-            mountpoint: ${ANIME}
-    movies:
-        driver: local-persist
-        driver_opts:
-            mountpoint: ${MOVIES}
-    movies4k:
-        driver: local-persist
-        driver_opts:
-            mountpoint: ${MOVIES4K}
-    asian:
-        driver: local-persist
-        driver_opts:
-            mountpoint: ${ASIAN}
-    duplicatilocal:
-        driver: local-persist
-        driver_opts:
-            mountpoint: ${DUPLICATI}
