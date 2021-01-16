@@ -1,5 +1,5 @@
 # ![kkonaPog](https://i.imgur.com/PSlPcfZ.png) medializr
-On a fresh **Ubuntu 20.04 Server**(without selecting any additional software in the installation guide except for **OpenSSH**) you can run the following commands in the following order and it should work just fine
+On a fresh **Ubuntu 20.04 Server**(without selecting any additional software in the installation guide except for **OpenSSH Server**) you can run the following commands in the following order and it should work just fine
 
 Also this guide assumes you are using Cloudflare as your DNS provider.
 
