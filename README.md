@@ -60,7 +60,7 @@ Example cifs mount:
 ```
 //10.10.10.13/poolerino /mnt/poolerino cifs credentials=/root/.smbcredentials,iocharset=utf8,vers=3.1.1,uid=1000,gid=1000 0 0
 ```
-## Now you can go ahead and mount it(it will auto mount on boot if you edited /etc/fstab but for now we need to manually mount it)
+## Now you can go ahead and mount it, it will auto mount on boot if you edited /etc/fstab but for now we need to manually mount it
 ```
 sudo mount /mnt/poolerino
 ```
@@ -99,6 +99,10 @@ cp ~/medializr/traefik.toml ~/containerdata/traefik/traefik.toml && nano ~/conta
 Edit **host_whitelist** to **sabnzbd.domain.tld**(replace with your own domain) in this file:
 ```
 nano ~/containerdata/sabnzbd/sabnzbd.ini
+```
+## Congrats! You should now be able to run update-all.sh and you should be good to go
+```
+sudo ~/medializr/update-all.sh
 ```
 ## Links to everything
 You need to create DNS-records for each of these and/or [edit your hosts-file](https://www.howtogeek.com/howto/27350/beginner-geek-how-to-edit-your-hosts-file/). If everything went OK you should be able to access the below URLs now.
