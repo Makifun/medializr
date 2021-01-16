@@ -69,7 +69,7 @@ sudo mount /mnt/poolerino
 cd ~ && git clone https://github.com/Makifun/medializr.git
 ```
 ## Traefik network
-Create the docker network for traefik and then create the acme folder, making sure **acme.json** exists in it and then set the correct permissions. **acme.json** must only be accessible from the owner of the file.
+Create the docker network for traefik and then create the acme folder, making sure **acme.json** exists in it and then set the correct permissions. **acme.json** must only be accessible by the owner of the file.
 ```
 sudo docker network create traefik_proxy
 mkdir -p ~/containerdata/traefik/acme
@@ -77,7 +77,7 @@ touch ~/containerdata/traefik/acme/acme.json
 chmod 600 ~/containerdata/traefik/acme/acme.json
 ```
 ## Edit .firewall in ~/containerdata/vpn
-Add your LAN IP-range/subnet(CIDR), such as **192.168.1.0/24** or **10.0.0.0/24** or whatever, just add it on one line, you need this to be able to access anything outside the VPN network(***such as the webui for qbittorrent, sabnzbd etc***)
+Add your LAN IP-range/subnet(CIDR), such as **192.168.1.0/24** or **10.0.0.0/24** or whatever, just add it on one line, you need this to be able to access anything outside the VPN network(***such as the webui for qbittorrent, sonarr, radarr etc***)
 ```
 mkdir -p ~/containerdata/vpn
 nano ~/containerdata/vpn/.firewall
@@ -128,18 +128,40 @@ They are named **gootify** and **oombi** to try to obfuscate it a bit
 ```
 ## Software used
 * [Cloud Commander](https://github.com/coderaiser/cloudcmd)
-* [Bazarr](https://github.com/morpheus65535/bazarr)
-* [Duplicati](https://github.com/duplicati/duplicati)
-* [Gotify](https://github.com/gotify/server)
-* [NZBHydra 2](https://github.com/theotherp/nzbhydra2)
-* [Jackett](https://github.com/Jackett/Jackett)
-* [Ombi](https://github.com/tidusjar/Ombi)
-* [Organizr](https://github.com/causefx/Organizr)
+* [Traefik](https://github.com/containous/traefik)
 * [dperson/openvpn-client](https://github.com/dperson/openvpn-client)
-* [Portainer](https://github.com/portainer/portainer)
 * [qBittorrent](https://github.com/qbittorrent/qBittorrent)
-* [Radarr](https://github.com/Radarr/Radarr)
+* [Jackett](https://github.com/Jackett/Jackett)
+* [NZBHydra 2](https://github.com/theotherp/nzbhydra2)
 * [SABnzbd](https://github.com/sabnzbd/sabnzbd)
 * [Sonarr](https://github.com/Sonarr/Sonarr)
+* [Radarr](https://github.com/Radarr/Radarr)
+* [Bazarr](https://github.com/morpheus65535/bazarr)
+* [Ombi](https://github.com/tidusjar/Ombi)
 * [Tautulli](https://github.com/Tautulli/Tautulli)
-* [Traefik](https://github.com/containous/traefik)
+* [Duplicati](https://github.com/duplicati/duplicati)
+* [Portainer](https://github.com/portainer/portainer)
+* [Gotify](https://github.com/gotify/server)
+* [Organizr](https://github.com/causefx/Organizr)
+## Known issues etc
+* 404 Not Found for a link
+```
+Usually happens with Sonarr, Radarr, Bazarr and Organizr
+Try to stop the containers, remove them and then recreate them
+This stops and removes all containers:
+sudo docker stop $(docker ps -a -q)
+sudo docker rm $(docker ps -a -q)
+sudo ~/medializr/update-all.sh
+```
+* Traefik is not working at all
+```
+Check and make sure that acme.json got the correct permissions(600)
+```
+* Lots of stuff can be done in a better way
+```
+Yeah I know, but it works for me omegalul
+```
+* Why Traefik v1 and not v2?
+```
+Too lazy to try to rework it for v2, they changed it a lot xd
+```
