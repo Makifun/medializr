@@ -138,12 +138,11 @@ I use **gootify** instead of **gotify** to try to obfuscate it a bit...
 * [Sonarr](https://github.com/Sonarr/Sonarr)
 * [Radarr](https://github.com/Radarr/Radarr)
 * [Bazarr](https://github.com/morpheus65535/bazarr)
-* [Ombi](https://github.com/tidusjar/Ombi)
+* [Overseerr](https://github.com/sct/overseerr)
 * [Tautulli](https://github.com/Tautulli/Tautulli)
 * [Duplicati](https://github.com/duplicati/duplicati)
 * [Portainer](https://github.com/portainer/portainer)
 * [Gotify](https://github.com/gotify/server)
-* [Organizr](https://github.com/causefx/Organizr)
 ## Known issues etc
 * 404 Not Found
 ```
