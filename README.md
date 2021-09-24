@@ -17,7 +17,7 @@ sudo apt install docker-ce docker-ce-cli containerd.io
 ## Install docker-compose and make it executable
 Check https://github.com/docker/compose/releases for any newer version first
 ```
-sudo curl -L "https://github.com/docker/compose/releases/download/1.28.0-rc3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 ```
 ## Install nfs-common
@@ -110,22 +110,20 @@ You need to create DNS-records for each of these and/or [edit your hosts-file](h
 https://cloudcmd.domain.tld
 https://traefik.domain.tld
 https://qbittorrent.domain.tld
-https://jackett.domain.tld
-https://hydra2.domain.tld
+https://prowlarr.domain.tld
 https://sabnzbd.domain.tld
 https://sonarr.domain.tld
 https://sonarr4k.domain.tld
 https://radarr.domain.tld
 https://radarr4k.domain.tld
 https://bazarr.domain.tld
-https://oombi.domain.tld <- this should be accessible from the internet
+https://overseerr.domain.tld <- this should be accessible from the internet
 https://tautulli.domain.tld
 https://duplicati.domain.tld
 https://portainer.domain.tld
 https://gootify.domain.tld <- this should be accessible from the internet
-https://organizr.domain.tld
 ```
-They are named **gootify** and **oombi** to try to obfuscate it a bit
+I use **gootify** instead of **gotify** to try to obfuscate it a bit...
 ## Example hosts entry(replace 10.10.10.13 with your docker host local IP):
 ```
 10.10.10.13 sonarr.domain.tld
@@ -135,8 +133,7 @@ They are named **gootify** and **oombi** to try to obfuscate it a bit
 * [Traefik](https://github.com/containous/traefik)
 * [dperson/openvpn-client](https://github.com/dperson/openvpn-client)
 * [qBittorrent](https://github.com/qbittorrent/qBittorrent)
-* [Jackett](https://github.com/Jackett/Jackett)
-* [NZBHydra 2](https://github.com/theotherp/nzbhydra2)
+* [Prowlarr](https://github.com/Prowlarr/Prowlarr)
 * [SABnzbd](https://github.com/sabnzbd/sabnzbd)
 * [Sonarr](https://github.com/Sonarr/Sonarr)
 * [Radarr](https://github.com/Radarr/Radarr)
@@ -148,14 +145,15 @@ They are named **gootify** and **oombi** to try to obfuscate it a bit
 * [Gotify](https://github.com/gotify/server)
 * [Organizr](https://github.com/causefx/Organizr)
 ## Known issues etc
-* 404 Not Found for a link
+* 404 Not Found
 ```
-Usually happens with Sonarr, Radarr, Bazarr and Organizr
+Can happen with Sonarr, Radarr, Bazarr and Prowlarr
 Try to stop the containers, remove them and then recreate them
 This stops and removes all containers:
 sudo docker stop $(docker ps -a -q)
 sudo docker rm $(docker ps -a -q)
 sudo ~/medializr/update-all.sh
+You will not lose any container data if you do this
 ```
 * Traefik is not working at all
 ```

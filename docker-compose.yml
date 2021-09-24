@@ -1,5 +1,12 @@
 version: '3.9'
 
+networks:
+    traefik_proxy:
+        external:
+            name: traefik_proxy
+    default:
+        driver: bridge
+
 services:
     cloudcmd:
         image: coderaiser/cloudcmd
@@ -20,7 +27,6 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
@@ -32,7 +38,7 @@ services:
           - TZ=${TZ}
 
     traefik:
-        image: traefik:v1.7.28-alpine
+        image: traefik:v1.7.30-alpine
         container_name: traefik
         restart: always
         hostname: traefik
@@ -59,7 +65,6 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -77,7 +82,6 @@ services:
         hostname: vpn
         extra_hosts:
           - "qbittorrent.${DOMAINNAME}:${DOCKERHOSTIP}"
-          - "jackett.${DOMAINNAME}:${DOCKERHOSTIP}"
           - "hydra2.${DOMAINNAME}:${DOCKERHOSTIP}"
           - "sabnzbd.${DOMAINNAME}:${DOCKERHOSTIP}"
           - "sonarr.${DOMAINNAME}:${DOCKERHOSTIP}"
@@ -85,6 +89,7 @@ services:
           - "radarr.${DOMAINNAME}:${DOCKERHOSTIP}"
           - "radarr4k.${DOMAINNAME}:${DOCKERHOSTIP}"
           - "bazarr.${DOMAINNAME}:${DOCKERHOSTIP}"
+          - "prowlarr.${DOMAINNAME}:${DOCKERHOSTIP}"
         cap_add:
           - NET_ADMIN
         networks:
@@ -124,7 +129,6 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
@@ -136,18 +140,18 @@ services:
           - TZ=${TZ}
           - WEBUI_PORT=8091
 
-    jackett:
-        image: linuxserver/jackett
-        container_name: jackett
+    prowlarr:
+        image: ghcr.io/linuxserver/prowlarr:develop
+        container_name: prowlarr
         restart: always
         depends_on:
           - vpn
         network_mode: "service:vpn"
         labels:
           - "traefik.enable=true"
-          - "traefik.backend=jackett"
-          - "traefik.frontend.rule=Host:jackett.${DOMAINNAME}"
-          - "traefik.port=9117"
+          - "traefik.backend=prowlarr"
+          - "traefik.frontend.rule=Host:prowlarr.${DOMAINNAME}"
+          - "traefik.port=9696"
           - "traefik.docker.network=traefik_proxy"
           - "traefik.frontend.headers.SSLRedirect=true"
           - "traefik.frontend.headers.STSSeconds=315360000"
@@ -158,45 +162,10 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - ${CONTAINERDATA}/jackett:/config
-          - ${NICEMEME}:/downloads
-        environment:
-          - PGID=${PGID}
-          - PUID=${PUID}
-          - TZ=${TZ}
-
-    hydra2:
-        image: linuxserver/nzbhydra2
-        container_name: hydra2
-        restart: always
-        depends_on:
-          - vpn
-        network_mode: "service:vpn"
-        labels:
-          - "traefik.enable=true"
-          - "traefik.backend=hydra2"
-          - "traefik.frontend.rule=Host:hydra2.${DOMAINNAME}"
-          - "traefik.port=5076"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
-          - "traefik.frontend.passHostHeader=true"
-        volumes:
-          - /etc/localtime:/etc/localtime:ro
-          - ${CONTAINERDATA}/hydra2:/config
-          - ${NICEMEME}:/downloads
+          - ${CONTAINERDATA}/prowlarr:/config
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -224,7 +193,6 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
@@ -237,7 +205,7 @@ services:
           - TZ=${TZ}
 
     sonarr:
-        image: linuxserver/sonarr:preview
+        image: linuxserver/sonarr
         container_name: sonarr
         restart: always
         depends_on:
@@ -258,7 +226,6 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
@@ -272,7 +239,7 @@ services:
           - TZ=${TZ}
 
     sonarr4k:
-        image: linuxserver/sonarr:preview
+        image: linuxserver/sonarr
         container_name: sonarr4k
         restart: always
         depends_on:
@@ -293,7 +260,6 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
@@ -327,14 +293,12 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
           - ${CONTAINERDATA}/radarr:/config
           - ${NICEMEME}:/downloads
           - ${MOVIES}:/movies
-          - ${ASIAN}:/asian
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
@@ -362,7 +326,6 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
@@ -396,7 +359,6 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
@@ -410,18 +372,18 @@ services:
           - PUID=${PUID}
           - TZ=${TZ}
 
-    ombi:
-        image: linuxserver/ombi
-        container_name: ombi
+    overseerr:
+        image: sctx/overseerr
+        container_name: overseerr
         restart: always
-        hostname: ombi
+        hostname: overseerr
         networks:
           - traefik_proxy
         labels:
           - "traefik.enable=true"
-          - "traefik.backend=ombi"
-          - "traefik.frontend.rule=Host:oombi.${DOMAINNAME}"
-          - "traefik.port=3579"
+          - "traefik.backend=overseerr"
+          - "traefik.frontend.rule=Host:overseerr.${DOMAINNAME}"
+          - "traefik.port=5055"
           - "traefik.docker.network=traefik_proxy"
           - "traefik.frontend.headers.SSLRedirect=true"
           - "traefik.frontend.headers.STSSeconds=315360000"
@@ -432,15 +394,15 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - ${CONTAINERDATA}/ombi:/config
+          - ${CONTAINERDATA}/overseerr:/app/config
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
+          - LOG_LEVEL=info
 
     tautulli:
         image: linuxserver/tautulli
@@ -464,7 +426,6 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
@@ -497,7 +458,6 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
@@ -529,7 +489,6 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /var/run/docker.sock:/var/run/docker.sock
@@ -557,7 +516,6 @@ services:
           - "traefik.frontend.headers.STSIncludeSubdomains=true"
           - "traefik.frontend.headers.STSPreload=true"
           - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
           - "traefik.frontend.passHostHeader=true"
         volumes:
           - /etc/localtime:/etc/localtime:ro
@@ -566,40 +524,3 @@ services:
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
-
-    organizr:
-        image: organizr/organizr
-        container_name: organizr
-        restart: always
-        hostname: organizr
-        labels:
-          - "traefik.enable=true"
-          - "traefik.backend=organizr"
-          - "traefik.frontend.rule=Host:organizr.${DOMAINNAME}"
-          - "traefik.port=80"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.headers.customFrameOptionsValue=allow-from ${ORGANIZRDOMAIN}"
-          - "traefik.frontend.passHostHeader=true"
-        volumes:
-          - /etc/localtime:/etc/localtime:ro
-          - ${CONTAINERDATA}/organizr:/config
-        environment:
-          - PGID=${PGID}
-          - PUID=${PUID}
-          - TZ=${TZ}
-
-networks:
-    traefik_proxy:
-        external:
-            name: traefik_proxy
-    default:
-        driver: bridge
