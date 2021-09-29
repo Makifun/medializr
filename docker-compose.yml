@@ -82,7 +82,6 @@ services:
         hostname: vpn
         extra_hosts:
           - "qbittorrent.${DOMAINNAME}:${DOCKERHOSTIP}"
-          - "hydra2.${DOMAINNAME}:${DOCKERHOSTIP}"
           - "sabnzbd.${DOMAINNAME}:${DOCKERHOSTIP}"
           - "sonarr.${DOMAINNAME}:${DOCKERHOSTIP}"
           - "sonarr4k.${DOMAINNAME}:${DOCKERHOSTIP}"
@@ -105,6 +104,8 @@ services:
         working_dir: "/vpn"
         dns:
           - ${VPNDNS}
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=0
         command: -f ""
 
     qbittorrent:
