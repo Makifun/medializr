@@ -1,0 +1,78 @@
+#!/bin/bash
+
+#Dating
+date=$(date '+%Y-%m-%d %H:%M:%S')
+echo "[$date]"
+
+#Source all the secrets
+SCRIPT_DIR=$(dirname "$(realpath "$0")")
+SECRETS_FILE="$SCRIPT_DIR/.secrets"
+if [ -f "$SECRETS_FILE" ]; then
+    source "$SECRETS_FILE"
+    echo "-> OK: .secrets was found and was sourced <-"
+else
+    echo "Error: .secrets is missing in $SCRIPT_DIR"
+    exit 1
+fi
+
+#Argcheck
+if [ -z "$1" ]; then
+  echo "Error: URL?? Hello??"
+  echo "usage: svtripper <svtplayurl> <season> <sonarrseriesid>"
+  exit 1
+else
+  echo "-> OK: URL: $1 <-"
+fi
+if [ -z "$2" ]; then
+  echo "Error: Season?? Hello??"
+  echo "usage: svtripper <svtplayurl> <season> <sonarrseriesid>"
+  exit 1
+else
+  season="$2"
+  echo "-> OK: Season: $season <-"
+fi
+if [ -z "$3" ]; then
+  echo "Error: Series ID?? Hello??"
+  echo "usage: svtripper <svtplayurl> <season> <sonarrseriesid>"
+  exit 1
+else
+  sonarrseriesid="$3"
+  echo "-> OK: Series ID: $sonarrseriesid <-"
+fi
+
+#Svtplaycheck
+svtplayexistcheck=$(curl -I $1 -s | grep "200")
+if [ -z "$svtplayexistcheck" ]; then
+  echo "Error: $1 404"
+  exit 1
+else
+  echo "-> OK: Show exists, yes, good <-"
+fi
+
+#Sonarrcheck
+sonarrfolder=$(curl -X 'GET' "$SONARRURL/api/v3/series/$sonarrseriesid" -H 'accept: application/json' -H "X-Api-Key: $SONARRAPI" -s | jq '.path')
+#Remove /tv/ from .path
+sonarrfolder="${sonarrfolder:5}"
+#Remove the last "-character
+sonarrfolder="${sonarrfolder::-1}"
+echo "-> OK: Sonarr Folder: $sonarrfolder <-"
+
+#Pathcheck
+tvshowpath="$TVSHOWSTORAGE/$sonarrfolder/Season $season/"
+echo "-> Creates the folder if it doesnt exist <-"
+echo 'mkdir -p "'$tvshowpath'"'
+mkdir -p "$tvshowpath"
+
+#Docker pull
+echo "-> Pulling spaam/svtplay-dl docker image <-"
+docker pull spaam/svtplay-dl
+
+#Let it rip
+echo "-> Time to RIP <-"
+docker run --rm -u $(id -u):$(id -g) -v "$tvshowpath:/data" spaam/svtplay-dl $1 --output-format mkv -A -S -M --filename "{title}.s{season}e{episode}.1080p.SVTPLAY.WEB-DL.H264-$RELEASEGROUP.{ext}"
+
+#Plex and Sonarr refresh
+echo "-> Rescanning your TV Shows in Plex <-"
+curl -G -H "X-Plex-Token: $PLEXTOKEN" --data-urlencode "path=/tv/$sonarrfolder" $PLEXURL/library/sections/$PLEXLIBRARYID/refresh
+echo "-> Rescanning $sonarrfolder in Sonarr <-"
+curl -X POST $SONARRURL/api/v3/command -H "X-Api-Key: $SONARRAPI" -H "Content-Type: application/json" -d "{\"name\": \"RescanSeries\", \"seriesId\": $sonarrseriesid}" 
