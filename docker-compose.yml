@@ -1,474 +1,895 @@
-version: '3.9'
-
 networks:
-    traefik_proxy:
-        external:
-            name: traefik_proxy
     default:
         driver: bridge
+        enable_ipv6: true
 
 services:
-    cloudcmd:
-        image: coderaiser/cloudcmd
-        container_name: cloudcmd
+    makiplex:
+        image: lscr.io/linuxserver/plex
+        container_name: makiplex
         restart: always
+        hostname: makiplex
+        network_mode: host
         labels:
-          - "traefik.enable=true"
-          - "traefik.backend=cloudcmd"
-          - "traefik.frontend.rule=Host:cloudcmd.${DOMAINNAME}"
-          - "traefik.port=8000"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.passHostHeader=true"
+          - 'traefik.enable=false'
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - ${POOLERINO}:/poolerino
+          - /etc/timezone:/etc/timezone:ro
+          - ${CONTAINERDATA}/makiplex:/config
+          - ${NICEMEME}/transcode:/transcode
+          - ${CLOUD}/Serie:/tv:ro
+          - ${CLOUD}/Serie4k:/tv4k:ro
+          - ${CLOUD}/Anime:/anime:ro
+          - ${CLOUD}/Film:/movies:ro
+          - ${CLOUD}/Film4k:/movies4k:ro
+          - ${CLOUD}/Asian:/asian:ro
+        environment:
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
+          - VERSION=docker
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost:32400/identity || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        devices:
+          - /dev/dri:/dev/dri
+
+    beszel:
+        image: henrygd/beszel
+        container_name: beszel
+        restart: always
+        hostname: beszel
+        labels:
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.beszel.rule=Host(`beszel.${DOMAINNAME}`)'
+          - 'traefik.http.services.beszel.loadbalancer.server.port=8090'
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+          - ${CONTAINERDATA}/beszel:/beszel_data
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
+
+    beszel-agent:
+        image: henrygd/beszel-agent
+        container_name: beszel-agent
+        restart: always
+        hostname: beszel-agent
+        network_mode: host
+        labels:
+          - 'traefik.enable=false'
+        volumes:
+          - /var/run/docker.sock:/var/run/docker.sock:ro
+          - ${BESZELDISK1}:/extra-filesystems/jonny:ro
+          - ${BESZELDISK2}:/extra-filesystems/rclonecache:ro
+          - ${BESZELDISK3}:/extra-filesystems/nicememe:ro
+        environment:
+          PORT: 45876
+          KEY: ${BESZELKEY}
+
+    apprise-api:
+        image: lscr.io/linuxserver/apprise-api
+        container_name: apprise-api
+        restart: always
+        hostname: apprise-api
+        labels:
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.apprise.rule=Host(`apprise.${DOMAINNAME}`)'
+          - 'traefik.http.services.apprise.loadbalancer.server.port=8000'
+        volumes:
+          - ${CONTAINERDATA}/apprise-api/config:/config
+          - ${CONTAINERDATA}/apprise-api/attachments:/attachments
+        environment:
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost:8000 || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
+
+    gitea:
+        image: gitea/gitea
+        container_name: gitea
+        restart: always
+        hostname: gitea
+        ports:
+          - 2222:22
+        labels:
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.gitea.rule=Host(`gitea.${DOMAINNAME}`)'
+          - 'traefik.http.services.gitea.loadbalancer.server.port=3000'
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+          - ${CONTAINERDATA}/gitea:/data
+        environment:
+          - USER_GID=${PGID}
+          - USER_UID=${PUID}
+          - GITEA__openid__ENABLE_OPENID_SIGNIN=false
+          - GITEA__openid__ENABLE_OPENID_SIGNUP=false
+          - GITEA__server__OFFLINE_MODE=true
+          - GITEA__service__DEFAULT_ALLOW_CREATE_ORGANIZATION=false
+          - GITEA__service__DISABLE_REGISTRATION=true
+          - GITEA__service__REQUIRE_SIGNIN_VIEW=true
+        healthcheck:
+          test: "curl -f http://localhost:3000/api/healthz"
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
+
+    mediainfo:
+        image: jlesage/mediainfo
+        container_name: mediainfo
+        restart: always
+        labels:
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.mediainfo.rule=Host(`mediainfo.${DOMAINNAME}`)'
+          - 'traefik.http.services.mediainfo.loadbalancer.server.port=5800'
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+          - ${CONTAINERDATA}/mediainfo:/config
+          - ${CLOUD}/Serie:/tv:ro
+          - ${CLOUD}/Serie4k:/tv4k:ro
+          - ${CLOUD}/Anime:/anime:ro
+          - ${CLOUD}/Film:/movies:ro
+          - ${CLOUD}/Film4k:/movies4k:ro
+          - ${CLOUD}/Asian:/asian:ro
+          - ${NICEMEME}:/downloads:ro
+        environment:
+          - TZ=${TZ}
+          - VNC_LISTENING_PORT=-1
+          - DARK_MODE=1
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost:5800 || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
+
+    flaresolverr:
+        image: ghcr.io/flaresolverr/flaresolverr
+        container_name: flaresolverr
+        restart: always
+        network_mode: 'service:vpn'
+        user: '${PUID}:${PGID}'
+        labels:
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.flaresolverr.rule=Host(`flaresolverr.${DOMAINNAME}`)'
+          - 'traefik.http.services.flaresolverr.loadbalancer.server.port=8191'
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+        environment:
+          - LOG_LEVEL=${LOG_LEVEL:-info}
+          - LOG_HTML=${LOG_HTML:-false}
+          - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
+          - TZ=${TZ}
+        healthcheck:
+          test: "curl http://localhost:8191"
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        depends_on:
+            vpn:
+                condition: service_started
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
+
+    bazarr:
+        image: lscr.io/linuxserver/bazarr:latest
+        container_name: bazarr
+        restart: always
+        network_mode: 'service:vpn'
+        labels:
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.bazarr.rule=Host(`bazarr.${DOMAINNAME}`)'
+          - 'traefik.http.services.bazarr.loadbalancer.server.port=6768'
+        volumes:
+          - ${CONTAINERDATA}/bazarr:/config
+          - ${CLOUD}/Serie:/tv
+          - ${CLOUD}/Anime:/anime
+          - ${CLOUD}/Film:/movies
+          - ${CLOUD}/Asian:/asian
+          - ${NICEMEME}:/downloads:ro
+        environment:
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
+          - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:bazarr
+          - TP_THEME=organizr
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost:6768 || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        depends_on:
+            vpn:
+                condition: service_started
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
+
+    bazarr4k:
+        image: lscr.io/linuxserver/bazarr:latest
+        container_name: bazarr4k
+        restart: always
+        network_mode: 'service:vpn'
+        labels:
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.bazarr4k.rule=Host(`bazarr4k.${DOMAINNAME}`)'
+          - 'traefik.http.services.bazarr4k.loadbalancer.server.port=6766'
+        volumes:
+          - ${CONTAINERDATA}/bazarr4k:/config
+          - ${CLOUD}/Serie4k:/tv4k
+          - ${CLOUD}/Film4k:/movies4k
+          - ${NICEMEME}:/downloads:ro
+        environment:
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
+          - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:bazarr
+          - TP_THEME=organizr
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost:6766 || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        depends_on:
+            vpn:
+                condition: service_started
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
+
+    homepage:
+        image: ghcr.io/gethomepage/homepage:latest
+        container_name: homepage
+        restart: always
+        hostname: homepage
+        labels:
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.homepage.rule=Host(`homepage.${DOMAINNAME}`)'
+          - 'traefik.http.services.homepage.loadbalancer.server.port=3000'
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+          - /var/run/docker.sock:/var/run/docker.sock:ro
+          - ${CONTAINERDATA}/homepage:/app/config
+          - ${CONTAINERDATA}/homepage/images:/app/public/images
+          - ${CLOUD}:/cloud:ro
+          - ${NICEMEME}:/downloads:ro
+          - ${RCLONECACHE}:/rclonecache_new:ro
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
+
+    plextraktsync:
+        image: ghcr.io/taxel/plextraktsync
+        container_name: plextraktsync
+        restart: always
+        hostname: plextraktsync
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+          - ${CONTAINERDATA}/plextraktsync:/app/config
+        environment:
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
+        command:
+          - watch
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
+
+    fail2ban:
+        image: lscr.io/linuxserver/fail2ban
+        container_name: fail2ban
+        restart: always
+        hostname: fail2ban
+        cap_add:
+          - NET_ADMIN
+          - NET_RAW
+        network_mode: host
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+          - ${CONTAINERDATA}/fail2ban:/config
+          - /var/log:/var/log:ro
+          - ${CONTAINERDATA}/vaultwarden/bitwarden.log:/remotelogs/vaultwarden/vaultwarden.log:ro
+          - ${CONTAINERDATA}/gotify/gotify.log:/remotelogs/gotify/gotify.log:ro
+          - ${CONTAINERDATA}/traefik/logs/access.log:/remotelogs/traefik/access.log:ro
+        environment:
+          - PGID=${PGID}
+          - PUID=${PUID}
+          - TZ=${TZ}
+
+    vaultwarden:
+        image: vaultwarden/server:alpine
+        container_name: vaultwarden
+        restart: always
+        hostname: vaultwarden
+        user: '${PUID}:${PGID}'
+        labels:
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.vaultwarden-ui.rule=Host(`vaultwarden.${DOMAINNAME}`)'
+          - 'traefik.http.routers.vaultwarden-ui.service=vaultwarden-ui'
+          - 'traefik.http.routers.vaultwarden-ui.middlewares=default@file'
+          - 'traefik.http.services.vaultwarden-ui.loadbalancer.server.port=80'
+          - 'traefik.http.routers.vaultwarden-websocket.rule=Host(`vaultwarden.${DOMAINNAME}`) && Path(`/notifications/hub`)'
+          - 'traefik.http.routers.vaultwarden-websocket.service=vaultwarden-websocket'
+          - 'traefik.http.services.vaultwarden-websocket.loadbalancer.server.port=3012'
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+          - ${CONTAINERDATA}/vaultwarden:/data
+        environment:
+          - ADMIN_TOKEN=${USERS}
+          - WEBSOCKET_ENABLED=true
+          - SIGNUPS_ALLOWED=false
+          - LOG_FILE=/data/bitwarden.log
+          - EXTENDED_LOGGING=true
+          - LOG_LEVEL=warn
+          - TZ=${TZ}
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
+
+    filebrowser:
+        image: filebrowser/filebrowser
+        container_name: filebrowser
+        restart: always
+        hostname: filebrowser
+        user: '${PUID}:${PGID}'
+        labels:
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.filebrowser.rule=Host(`filebrowser.${DOMAINNAME}`)'
+          - 'traefik.http.services.filebrowser.loadbalancer.server.port=80'
+          - 'traefik.http.routers.filebrowser.middlewares=basic_auth@docker'
+          - 'traefik.http.middlewares.basic_auth.basicauth.users=${USERS}'
+          - 'traefik.http.middlewares.basic_auth.basicauth.removeHeader=true'
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+          - ${CONTAINERDATA}/filebrowser:/config
+          - /home/makifun:/makifun
+          - ${NICEMEME}:/nicememe
+          - ${CLOUD}:/cloud
+        command:
+          - '--cache-dir=/config/cache'
+          - '--database=/config/filebrowser.db'
+          - '--config=/config/filebrowser.json'
+          - '--port=80'
+          - '--noauth'
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
+
+    diun:
+        image: crazymax/diun:latest
+        container_name: diun
+        restart: always
+        hostname: diun
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+          - /var/run/docker.sock:/var/run/docker.sock:ro
+          - ${CONTAINERDATA}/diun/data:/data
+          - ${CONTAINERDATA}/diun/etc/diun:/etc/diun
+        environment:
+          - LOG_LEVEL=info
+          - LOG_JSON=false
+          - TZ=${TZ}
+        command: serve
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
+
+    unpackerr:
+        container_name: unpackerr
+        image: ghcr.io/hotio/unpackerr
+        restart: always
+        hostname: unpackerr
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+          - ${CONTAINERDATA}/unpackerr:/config
           - ${NICEMEME}:/downloads
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
+
+    traefik-ssl-certificate-exporter:
+        image: rafi0101/traefik-ssl-certificate-exporter:latest
+        container_name: traefik-ssl-certificate-exporter
+        restart: always
+        hostname: traefik-ssl-certificate-exporter
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+          - ${CONTAINERDATA}/traefik-ssl-certificate-exporter:/app/certs
+          - ${CONTAINERDATA}/traefik/json/acme.json:/app/traefik/acme.json:ro
+        environment:
+          CRON_TIME: "* * * * *"
+          #CERT_OWNER_ID: "1000"
+          #CERT_GROUP_ID: "1000"
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
 
     traefik:
-        image: traefik:v1.7.30-alpine
+        #image: traefik:3.1.5 #no mem leak
+        image: traefik:latest
         container_name: traefik
         restart: always
         hostname: traefik
-        domainname: ${DOMAINNAME}
-        networks:
-          - default
-          - traefik_proxy
         ports:
           - 80:80
           - 443:443
-          - 8080:8080
         labels:
-          - "traefik.enable=true"
-          - "traefik.backend=traefik"
-          - "traefik.frontend.rule=Host:traefik.${DOMAINNAME}"
-          - "traefik.port=8080"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.passHostHeader=true"
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.traefik.rule=Host(`traefik.${DOMAINNAME}`)'
+          - 'traefik.http.routers.traefik.service=api@internal'
+          - 'traefik.http.routers.traefik.middlewares=basic_auth@docker'
+          - "traefik.http.middlewares.basic_auth.basicauth.users=${USERS}"
+          - 'traefik.http.middlewares.basic_auth.basicauth.removeHeader=true'
         volumes:
-          - /var/run/docker.sock:/var/run/docker.sock:ro
           - /etc/localtime:/etc/localtime:ro
-          - ${CONTAINERDATA}/traefik:/etc/traefik
-          - ${CONTAINERDATA}/traefiktmp:/tmp
+          - /etc/timezone:/etc/timezone:ro
+          - /var/run/docker.sock:/var/run/docker.sock:ro
+          - ${CONTAINERDATA}/traefik/json:/json
+          - ${CONTAINERDATA}/traefik/logs:/logs
+          - ${CONTAINERDATA}/traefik/dynamic_conf:/dynamic_conf
+          - ${CONTAINERDATA}/traefik/tmp:/tmp
+        command:
+          # Provider
+          - '--providers.docker'
+          - '--providers.docker.exposedbydefault=false'
+          # Entrypoints
+          - '--entrypoints.http.address=:80'
+          - '--entrypoints.https.address=:443'
+          - '--entrypoints.http.http.redirections.entrypoint.to=https'
+          - '--entrypoints.https.http.tls.certresolver=dns-cloudflare'
+          - '--entrypoints.https.http.tls.domains[0].main=${DOMAINNAME}'
+          - '--entrypoints.https.http.tls.domains[0].sans=*.${DOMAINNAME}'
+          - '--entrypoints.https.forwardedHeaders.trustedIPs=${CLOUDFLARE_IPS},${LOCAL_IPS}'
+          # Let's Encrypt
+          - '--certificatesresolvers.dns-cloudflare.acme.email=${CF_API_EMAIL}'
+          - '--certificatesResolvers.dns-cloudflare.acme.storage=/json/acme.json'
+          - '--certificatesResolvers.dns-cloudflare.acme.dnsChallenge=true'
+          - '--certificatesResolvers.dns-cloudflare.acme.dnsChallenge.provider=cloudflare'
+          - '--certificatesResolvers.dns-cloudflare.acme.dnsChallenge.delayBeforeCheck=10'
+          - '--certificatesResolvers.dns-cloudflare.acme.dnsChallenge.disablePropagationCheck=true'
+          # Logs
+          #- '--accesslog.filepath=/logs/access.log'
+          #- '--accesslog.format=json'
+          - '--log.filepath=/logs/traefik.log'
+          - '--log.format=json'
+          - '--log.level=INFO'
+          #- '--metrics.prometheus'
+          # Misc
+          - '--api.dashboard'
+          - '--global.sendanonymoususage=false'
+          - '--ping'
+          - '--providers.file.directory=/dynamic_conf/'
+          - '--providers.file.watch=true'
         environment:
-          - CF_API_EMAIL=${CLOUDFLARE_EMAIL}
-          - CF_API_KEY=${CLOUDFLARE_API_KEY}
+          - CF_API_EMAIL=${CF_API_EMAIL}
+          - CF_DNS_API_TOKEN=${CF_API_KEY}
+        healthcheck:
+          test: ['CMD', 'traefik', 'healthcheck', '--ping']
+          interval: 10s
+          timeout: 10s
+          retries: 5
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
 
     vpn:
-        image: dperson/openvpn-client
+        image: qmcgaw/gluetun:latest
         container_name: vpn
         restart: always
         hostname: vpn
         extra_hosts:
-          - "qbittorrent.${DOMAINNAME}:${DOCKERHOSTIP}"
-          - "sabnzbd.${DOMAINNAME}:${DOCKERHOSTIP}"
-          - "sonarr.${DOMAINNAME}:${DOCKERHOSTIP}"
-          - "sonarr4k.${DOMAINNAME}:${DOCKERHOSTIP}"
-          - "radarr.${DOMAINNAME}:${DOCKERHOSTIP}"
-          - "radarr4k.${DOMAINNAME}:${DOCKERHOSTIP}"
-          - "bazarr.${DOMAINNAME}:${DOCKERHOSTIP}"
-          - "prowlarr.${DOMAINNAME}:${DOCKERHOSTIP}"
+          # Custom DNS
+          - 'qbittorrent.${DOMAINNAME}:${DOCKERHOSTIP}'
+          - 'nzbget.${DOMAINNAME}:${DOCKERHOSTIP}'
+          - 'sonarr.${DOMAINNAME}:${DOCKERHOSTIP}'
+          - 'radarr.${DOMAINNAME}:${DOCKERHOSTIP}'
+          - 'sonarr4k.${DOMAINNAME}:${DOCKERHOSTIP}'
+          - 'radarr4k.${DOMAINNAME}:${DOCKERHOSTIP}'
+          - 'prowlarr.${DOMAINNAME}:${DOCKERHOSTIP}'
+          - 'gootify.${DOMAINNAME}:${DOCKERHOSTIP}'
+          - 'flaresolverr.${DOMAINNAME}:${DOCKERHOSTIP}'
         cap_add:
           - NET_ADMIN
-        networks:
-          - default
+        labels:
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.gluetun.rule=Host(`gluetun.${DOMAINNAME}`)'
+          - 'traefik.http.services.gluetun.loadbalancer.server.port=8000'
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - ${CONTAINERDATA}/vpn:/vpn
-          - /dev/net:/dev/net:z
+          - /etc/timezone:/etc/timezone:ro
+          - ${CONTAINERDATA}/gluetun/config.toml:/gluetun/auth/config.toml
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
-        working_dir: "/vpn"
-        dns:
-          - ${VPNDNS}
+          #- VPN_SERVICE_PROVIDER=airvpn
+          #- SERVER_COUNTRIES=Sweden
+          - VPN_SERVICE_PROVIDER=custom #Custom airvpn
+          #- WIREGUARD_ENDPOINT_IP=62.102.148.145 #Custom airvpn, Alrami SE, Uppsala, Port Forward OK
+          #- WIREGUARD_ENDPOINT_IP=79.142.76.243 #Custom airvpn, Copernicus SE, Stockholm, Port Forward OK
+          - WIREGUARD_ENDPOINT_IP=213.152.162.172 #Custom airvpn, Caph NL, Alblasserdam, Port Forward OK
+          - WIREGUARD_ENDPOINT_PORT=1637 #Custom airvpn
+          - VPN_TYPE=wireguard
+          - WIREGUARD_PUBLIC_KEY=${WIREGUARD_PUBLIC_KEY}
+          - WIREGUARD_PRIVATE_KEY=${WIREGUARD_PRIVATE_KEY}
+          - WIREGUARD_PRESHARED_KEY=${WIREGUARD_PRESHARED_KEY}
+          - WIREGUARD_ADDRESSES=${WIREGUARD_ADDRESSES}
+          - BLOCK_MALICIOUS=off #DNS filter off
+          - FIREWALL_OUTBOUND_SUBNETS=${LOCAL_IPS} #local network
+          - FIREWALL_VPN_INPUT_PORTS=${FIREWALL_VPN_INPUT_PORTS} #qbittorrent port forward
+          - DOT_PROVIDERS=cloudflare,quad9
         sysctls:
-          - net.ipv6.conf.all.disable_ipv6=0
-        command: -f ""
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
+        devices:
+          - /dev/net/tun:/dev/net/tun
+
+    autobrr:
+        image: ghcr.io/autobrr/autobrr
+        container_name: autobrr
+        restart: always
+        user: '${PUID}:${PGID}'
+        network_mode: 'service:vpn'
+        labels:
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.autobrr.rule=Host(`autobrr.${DOMAINNAME}`)'
+          - 'traefik.http.services.autobrr.loadbalancer.server.port=7474'
+        volumes:
+          - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+          - ${CONTAINERDATA}/autobrr:/config
+        environment:
+          - TZ=${TZ}
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        depends_on:
+            vpn:
+                condition: service_started
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
 
     qbittorrent:
         image: linuxserver/qbittorrent
         container_name: qbittorrent
         restart: always
-        depends_on:
-          - vpn
-        network_mode: "service:vpn"
+        network_mode: 'service:vpn'
         labels:
-          - "traefik.enable=true"
-          - "traefik.backend=qbittorrent"
-          - "traefik.frontend.rule=Host:qbittorrent.${DOMAINNAME}"
-          - "traefik.port=8091"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.passHostHeader=true"
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.qbittorrent.rule=Host(`qbittorrent.${DOMAINNAME}`)'
+          - 'traefik.http.services.qbittorrent.loadbalancer.server.port=9090'
         volumes:
           - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
           - ${CONTAINERDATA}/qbittorrent:/config
-          - ${NICEMEME}:/downloads
+          - ${NICEMEME}/qbittorrent:/downloads
         environment:
+          - WEBUI_PORT=9090
+          - TORRENTING_PORT=${FIREWALL_VPN_INPUT_PORTS}
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
-          - WEBUI_PORT=8091
+          - UMASK=002
+          - DOCKER_MODS=ghcr.io/themepark-dev/theme.park:qbittorrent
+          - TP_THEME=overseerr
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost:9090 || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        depends_on:
+            vpn:
+                condition: service_started
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
 
     prowlarr:
-        image: ghcr.io/linuxserver/prowlarr:develop
+        image: lscr.io/linuxserver/prowlarr:develop
         container_name: prowlarr
         restart: always
-        depends_on:
-          - vpn
-        network_mode: "service:vpn"
+        network_mode: 'service:vpn'
         labels:
-          - "traefik.enable=true"
-          - "traefik.backend=prowlarr"
-          - "traefik.frontend.rule=Host:prowlarr.${DOMAINNAME}"
-          - "traefik.port=9696"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.passHostHeader=true"
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.prowlarr.rule=Host(`prowlarr.${DOMAINNAME}`)'
+          - 'traefik.http.services.prowlarr.loadbalancer.server.port=9696'
         volumes:
           - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
           - ${CONTAINERDATA}/prowlarr:/config
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost:9696 || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        depends_on:
+            vpn:
+                condition: service_started
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
 
-    sabnzbd:
-        image: linuxserver/sabnzbd
-        container_name: sabnzbd
+    nzbget:
+        image: lscr.io/linuxserver/nzbget:latest
+        container_name: nzbget
         restart: always
-        hostname: sabnzbd
-        networks:
-          - traefik_proxy
+        #network_mode: 'service:vpn'
         labels:
-          - "traefik.enable=true"
-          - "traefik.backend=sabnzbd"
-          - "traefik.frontend.rule=Host:sabnzbd.${DOMAINNAME}"
-          - "traefik.port=8080"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.passHostHeader=true"
+          - 'traefik.enable=false'
         volumes:
           - /etc/localtime:/etc/localtime:ro
-          - ${CONTAINERDATA}/sabnzbd:/config
-          - ${NICEMEME}:/downloads
-          - ${NICEMEME}:/incomplete-downloads
+          - /etc/timezone:/etc/timezone:ro
+          - ${CONTAINERDATA}/nzbget:/config
+          - ${NICEMEME}/nzbget:/downloads
+        ports:
+          - 6790:6789
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
+        healthcheck:
+          test: "curl http://localhost:6789"
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
 
     sonarr:
-        image: linuxserver/sonarr
+        image: lscr.io/linuxserver/sonarr:latest
         container_name: sonarr
         restart: always
-        depends_on:
-          - vpn
-        network_mode: "service:vpn"
+        network_mode: 'service:vpn'
         labels:
-          - "traefik.enable=true"
-          - "traefik.backend=sonarr"
-          - "traefik.frontend.rule=Host:sonarr.${DOMAINNAME}"
-          - "traefik.port=8989"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.passHostHeader=true"
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.sonarr.rule=Host(`sonarr.${DOMAINNAME}`)'
+          - 'traefik.http.services.sonarr.loadbalancer.server.port=8989'
         volumes:
           - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
           - ${CONTAINERDATA}/sonarr:/config
           - ${NICEMEME}:/downloads
-          - ${TV}:/tv
-          - ${ANIME}:/anime
+          - ${CLOUD}/Serie:/tv
+          - ${CLOUD}/Anime:/anime
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost:8989 || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        depends_on:
+            vpn:
+                condition: service_started
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
 
     sonarr4k:
-        image: linuxserver/sonarr
+        image: lscr.io/linuxserver/sonarr:latest
         container_name: sonarr4k
         restart: always
-        depends_on:
-          - vpn
-        network_mode: "service:vpn"
+        network_mode: 'service:vpn'
         labels:
-          - "traefik.enable=true"
-          - "traefik.backend=sonarr4k"
-          - "traefik.frontend.rule=Host:sonarr4k.${DOMAINNAME}"
-          - "traefik.port=8990"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.passHostHeader=true"
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.sonarr4k.rule=Host(`sonarr4k.${DOMAINNAME}`)'
+          - 'traefik.http.services.sonarr4k.loadbalancer.server.port=8990'
         volumes:
           - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
           - ${CONTAINERDATA}/sonarr4k:/config
           - ${NICEMEME}:/downloads
-          - ${TV4K}:/tv4k
+          - ${CLOUD}/Serie4k:/tv4k
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost:8990 || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        depends_on:
+            vpn:
+                condition: service_started
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
 
     radarr:
-        image: linuxserver/radarr
+        image: lscr.io/linuxserver/radarr:latest
         container_name: radarr
         restart: always
-        depends_on:
-          - vpn
-        network_mode: "service:vpn"
+        network_mode: 'service:vpn'
         labels:
-          - "traefik.enable=true"
-          - "traefik.backend=radarr"
-          - "traefik.frontend.rule=Host:radarr.${DOMAINNAME}"
-          - "traefik.port=7878"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.passHostHeader=true"
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.radarr.rule=Host(`radarr.${DOMAINNAME}`)'
+          - 'traefik.http.services.radarr.loadbalancer.server.port=7878'
         volumes:
           - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
           - ${CONTAINERDATA}/radarr:/config
           - ${NICEMEME}:/downloads
-          - ${MOVIES}:/movies
+          - ${CLOUD}/Film:/movies
+          - ${CLOUD}/Asian:/asian
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost:7878 || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
+        depends_on:
+            vpn:
+                condition: service_started
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
 
     radarr4k:
-        image: linuxserver/radarr
+        image: lscr.io/linuxserver/radarr:latest
         container_name: radarr4k
         restart: always
-        depends_on:
-          - vpn
-        network_mode: "service:vpn"
+        network_mode: 'service:vpn'
         labels:
-          - "traefik.enable=true"
-          - "traefik.backend=radarr4k"
-          - "traefik.frontend.rule=Host:radarr4k.${DOMAINNAME}"
-          - "traefik.port=7879"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.passHostHeader=true"
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.radarr4k.rule=Host(`radarr4k.${DOMAINNAME}`)'
+          - 'traefik.http.services.radarr4k.loadbalancer.server.port=7879'
         volumes:
           - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
           - ${CONTAINERDATA}/radarr4k:/config
           - ${NICEMEME}:/downloads
-          - ${MOVIES4K}:/movies4k
+          - ${CLOUD}/Film4k:/movies4k
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
-
-    bazarr:
-        image: linuxserver/bazarr
-        container_name: bazarr
-        restart: always
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost:7879 || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
         depends_on:
-          - vpn
-        network_mode: "service:vpn"
-        labels:
-          - "traefik.enable=true"
-          - "traefik.backend=bazarr"
-          - "traefik.frontend.rule=Host:bazarr.${DOMAINNAME}"
-          - "traefik.port=6767"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.passHostHeader=true"
-        volumes:
-          - /etc/localtime:/etc/localtime:ro
-          - ${CONTAINERDATA}/bazarr:/config
-          - ${MOVIES}:/hehe/Film
-          - ${ANIME}:/hehe/Anime
-          - ${TV}:/tv
-          - ${MOVIES}:/movies
-        environment:
-          - PGID=${PGID}
-          - PUID=${PUID}
-          - TZ=${TZ}
+            vpn:
+                condition: service_started
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
 
     overseerr:
         image: sctx/overseerr
         container_name: overseerr
         restart: always
         hostname: overseerr
-        networks:
-          - traefik_proxy
         labels:
-          - "traefik.enable=true"
-          - "traefik.backend=overseerr"
-          - "traefik.frontend.rule=Host:overseerr.${DOMAINNAME}"
-          - "traefik.port=5055"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.passHostHeader=true"
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.overseerr.rule=Host(`overseerr.${DOMAINNAME}`)'
+          - 'traefik.http.routers.overseerr.middlewares=default@file'
+          - 'traefik.http.services.overseerr.loadbalancer.server.port=5055'
         volumes:
           - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
           - ${CONTAINERDATA}/overseerr:/app/config
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost:5055 || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
           - LOG_LEVEL=info
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
 
     tautulli:
-        image: linuxserver/tautulli
+        image: lscr.io/linuxserver/tautulli:latest
         container_name: tautulli
         restart: always
         hostname: tautulli
-        networks:
-          - traefik_proxy
         labels:
-          - "traefik.enable=true"
-          - "traefik.backend=tautulli"
-          - "traefik.frontend.rule=Host:tautulli.${DOMAINNAME}"
-          - "traefik.port=8181"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.passHostHeader=true"
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.tautulli.rule=Host(`tautulli.${DOMAINNAME}`)'
+          - 'traefik.http.services.tautulli.loadbalancer.server.port=8181'
+          - 'traefik.http.routers.tautulli.middlewares=default@file'
         volumes:
           - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
           - ${CONTAINERDATA}/tautulli:/config
-          - ${CONTAINERDATA}/tautulli:/logs
+        healthcheck:
+          test: wget --no-verbose --tries=1 --spider http://localhost:8181 || exit 1
+          interval: 5m
+          timeout: 3s
+          retries: 3
+          start_period: 2m
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
-
-    duplicati:
-        image: linuxserver/duplicati
-        container_name: duplicati
-        restart: always
-        hostname: duplicati
-        networks:
-          - traefik_proxy
-        labels:
-          - "traefik.enable=true"
-          - "traefik.backend=duplicati"
-          - "traefik.frontend.rule=Host:duplicati.${DOMAINNAME}"
-          - "traefik.port=8200"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.passHostHeader=true"
-        volumes:
-          - /etc/localtime:/etc/localtime:ro
-          - ${CONTAINERDATA}/duplicati:/config
-          - ${DUPLICATI}:/backups
-          - ${CONTAINERDATA}:/source:ro
-        environment:
-          - PGID=${PGID}
-          - PUID=${PUID}
-          - TZ=${TZ}
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
 
     portainer:
         image: portainer/portainer-ce
@@ -476,52 +897,40 @@ services:
         restart: always
         hostname: portainer
         labels:
-          - "traefik.enable=true"
-          - "traefik.backend=portainer"
-          - "traefik.frontend.rule=Host:portainer.${DOMAINNAME}"
-          - "traefik.port=9000"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.passHostHeader=true"
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.portainer.rule=Host(`portainer.${DOMAINNAME}`)'
+          - 'traefik.http.services.portainer.loadbalancer.server.port=9000'
         volumes:
-          - /var/run/docker.sock:/var/run/docker.sock
           - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
+          - /var/run/docker.sock:/var/run/docker.sock
           - ${CONTAINERDATA}/portainer:/data
         command: -H unix:///var/run/docker.sock
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
 
     gotify:
         image: gotify/server
         container_name: gotify
         restart: always
         hostname: gotify
+        entrypoint: sh -c "/app/gotify-app 2>&1 | tee /app/data/gotify.log"
         labels:
-          - "traefik.enable=true"
-          - "traefik.backend=gotify"
-          - "traefik.frontend.rule=Host:gootify.${DOMAINNAME}"
-          - "traefik.port=80"
-          - "traefik.docker.network=traefik_proxy"
-          - "traefik.frontend.headers.SSLRedirect=true"
-          - "traefik.frontend.headers.STSSeconds=315360000"
-          - "traefik.frontend.headers.browserXSSFilter=true"
-          - "traefik.frontend.headers.contentTypeNosniff=true"
-          - "traefik.frontend.headers.forceSTSHeader=true"
-          - "traefik.frontend.headers.SSLHost=${DOMAINNAME}"
-          - "traefik.frontend.headers.STSIncludeSubdomains=true"
-          - "traefik.frontend.headers.STSPreload=true"
-          - "traefik.frontend.headers.frameDeny=true"
-          - "traefik.frontend.passHostHeader=true"
+          - 'traefik.enable=true'
+          - 'traefik.http.routers.gotify.rule=Host(`gootify.${DOMAINNAME}`)'
+          - 'traefik.http.routers.gotify.middlewares=default@file'
+          - 'traefik.http.services.gotify.loadbalancer.server.port=80'
         volumes:
           - /etc/localtime:/etc/localtime:ro
+          - /etc/timezone:/etc/timezone:ro
           - ${CONTAINERDATA}/gotify:/app/data
+        healthcheck:
+          test: "curl http://localhost"
         environment:
           - PGID=${PGID}
           - PUID=${PUID}
           - TZ=${TZ}
+        sysctls:
+          - net.ipv6.conf.all.disable_ipv6=1
+          - net.ipv6.conf.default.disable_ipv6=1
